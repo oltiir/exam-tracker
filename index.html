@@ -1,0 +1,1074 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UBT Exam Tracker</title>
+<meta name="theme-color" content="#f2f4f8">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Exam Tracker">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --canvas:#f2f4f8; --surface:#ffffff; --tint:#f7f9fc;
+    --ink:#1c2b41; --muted:#5b6b80; --faint:#93a2b4; --border:#e3e8ef; --hair:#edf0f5;
+    --accent:#0e7490; --accent-soft:#e6f4f7;
+    --good:#188445; --good-soft:#eaf6ee; --good-line:#cfe9d8;
+    --bad:#c2333d; --bad-soft:#fbeeee;
+    --display:'Space Grotesk',system-ui,sans-serif;
+    --body:'Inter',system-ui,sans-serif;
+    --mono:'JetBrains Mono',ui-monospace,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--canvas);color:var(--ink);font-family:var(--body);font-size:14px;
+    line-height:1.55;-webkit-font-smoothing:antialiased;padding:26px 16px 70px}
+  .wrap{max-width:1020px;margin:0 auto}
+  .eyebrow{font:500 10.5px/1 var(--body);letter-spacing:.14em;text-transform:uppercase;color:var(--faint)}
+  h1{font-family:var(--display);font-weight:600;font-size:22px;letter-spacing:-.015em;margin-top:6px}
+  .lede{color:var(--muted);font-size:13px;margin-top:4px;max-width:56ch}
+  header.top{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;flex-wrap:wrap;
+    padding-bottom:18px;border-bottom:1px solid var(--border)}
+  .avg-pill{background:var(--surface);border:1px solid var(--border);border-radius:12px;
+    padding:10px 16px;text-align:right;min-width:150px}
+  .avg-pill .k{font:500 10px/1 var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--faint)}
+  .avg-pill .v{font:600 22px/1.15 var(--mono);margin-top:4px;letter-spacing:-.02em}
+  .avg-pill .d{font:500 11px/1.2 var(--body);margin-top:3px}
+  section{margin-top:32px}
+  .shead{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .shead h2{font-family:var(--display);font-weight:600;font-size:15.5px;letter-spacing:-.01em}
+  .shead .hint{font-size:12px;color:var(--faint)}
+  .sub{color:var(--muted);font-size:12.5px;margin-top:3px;max-width:74ch}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:12px}
+  .sample-banner{padding:12px 14px;margin-bottom:12px;font-size:13.5px;line-height:1.55;
+    color:var(--muted);border-color:var(--accent);background:var(--accent-soft)}
+  .sample-banner b{color:var(--ink)}
+
+  /* session tabs — one horizontal strip, scrolls sideways on a phone */
+  .sessbar{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 10px;
+    scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch}
+  .sessbar::-webkit-scrollbar{height:5px}
+  .sessbar::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+  .stab{flex:0 0 auto;scroll-snap-align:start;display:block;text-align:left;font:inherit;
+    padding:9px 13px;border-radius:11px;border:1px solid var(--border);
+    background:var(--surface);cursor:pointer;min-width:104px}
+  .stab .st-l{display:block;font-weight:650;font-size:13.5px;color:var(--ink);white-space:nowrap}
+  .stab .st-m{display:block;font-size:11.5px;color:var(--faint);white-space:nowrap;margin-top:2px}
+  .stab:hover{border-color:var(--faint)}
+  .stab.on{border-color:var(--accent);background:var(--accent-soft);box-shadow:0 0 0 1px var(--accent)}
+  .stab.on .st-m{color:var(--accent)}
+  .stab.done{border-color:var(--good-line);background:var(--good-soft)}
+  .stab.done .st-m{color:var(--good)}
+  .stab.empty .st-m{color:var(--faint)}
+
+  /* capacity meter under the exams heading */
+  .cap-bar{display:flex;align-items:center;gap:10px;margin:-2px 0 12px;font-size:12.5px;color:var(--muted)}
+  .cap-track{flex:1;max-width:220px;height:6px;border-radius:3px;background:var(--hair);overflow:hidden}
+  .cap-fill{height:100%;background:var(--accent);border-radius:3px;transition:width .25s}
+  .cap-bar.full .cap-fill{background:var(--good)}
+  .cap-bar b{color:var(--ink);font-weight:650}
+
+  .exam-row select.mon{font:inherit;padding:7px 8px;border:1px solid var(--border);
+    border-radius:8px;background:var(--surface);color:var(--ink)}
+  #addExam:disabled{opacity:.5;cursor:not-allowed}
+  .cal-multi{display:grid;gap:14px}
+  .cal-month-h{font-weight:650;font-size:13px;color:var(--muted);margin-bottom:6px}
+
+  /* settings */
+  details.settings{margin-top:16px}
+  details.settings summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:9px;
+    padding:12px 15px;font-family:var(--display);font-weight:500;font-size:13px}
+  details.settings summary::-webkit-details-marker{display:none}
+  details.settings summary .chev{transition:transform .2s;color:var(--faint)}
+  details.settings[open] summary .chev{transform:rotate(90deg)}
+  .set-body{padding:4px 15px 16px;border-top:1px solid var(--hair)}
+  .set-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:12px}
+  @media(max-width:820px){.set-grid{grid-template-columns:repeat(2,1fr)}}
+  .set-grid label,.wide{display:flex;flex-direction:column;gap:4px;font:500 10.5px/1.2 var(--body);
+    letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+  .set-body input,.set-body textarea{font:400 13px var(--body);color:var(--ink);
+    border:1px solid var(--border);border-radius:8px;padding:7px 9px;background:var(--tint);width:100%}
+  .set-body input:focus-visible,.set-body textarea:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+  .set-body h4{font-family:var(--display);font-weight:600;font-size:12.5px;margin:16px 0 8px}
+  .exam-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:7px;align-items:center}
+  .exam-row .f-name{flex:3 1 150px;min-width:0}
+  .exam-row .f-note{flex:2 1 110px;min-width:0}
+  .exam-row .f-day{flex:0 0 66px}
+  .exam-row select.mon{flex:0 0 76px}
+  .exam-row button{flex:0 0 28px}
+  .exam-row button{border:none;background:none;color:var(--faint);font-size:15px;cursor:pointer;border-radius:6px;padding:4px}
+  .exam-row button:hover{color:var(--bad);background:var(--bad-soft)}
+  .wide{margin-top:14px}
+  .wide textarea{min-height:52px;resize:vertical;text-transform:none;letter-spacing:0}
+  .set-actions{display:flex;gap:9px;margin-top:14px;flex-wrap:wrap}
+  .btn{font:500 12px var(--body);border:1px solid var(--border);background:var(--surface);color:var(--ink);
+    border-radius:8px;padding:8px 14px;cursor:pointer;transition:.15s}
+  .btn:hover{border-color:var(--faint)}
+  .btn:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+  .btn.primary{background:var(--ink);border-color:var(--ink);color:#fff}
+  .btn.primary:hover{background:#2a3c57}
+  .btn.ghost{color:var(--muted)}
+  .btn.danger:hover{color:var(--bad);border-color:var(--bad)}
+
+  /* overview */
+  .overview{display:grid;grid-template-columns:190px 1fr;gap:16px;margin-top:20px}
+  @media(max-width:700px){.overview{grid-template-columns:1fr}}
+  .gauge{padding:16px 14px;display:flex;flex-direction:column;align-items:center}
+  .beaker{position:relative;width:66px;height:168px;border:1px solid var(--border);
+    border-radius:10px;background:var(--tint);overflow:hidden}
+  .water{position:absolute;left:0;right:0;bottom:0;height:50%;
+    background:linear-gradient(180deg,#31b0cf,var(--accent));
+    transition:height .55s cubic-bezier(.4,0,.2,1),background .4s}
+  .wline{position:absolute;left:-1px;right:-1px;top:50%;border-top:1.5px dashed #64748b}
+  .wline i{position:absolute;right:3px;top:-15px;font:500 9.5px/1 var(--mono);font-style:normal;
+    color:var(--muted);background:var(--surface);padding:1px 3px;border-radius:3px}
+  .gauge .cap{font:500 10px/1 var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin-top:12px}
+  .gauge .scale{font:400 10px/1 var(--mono);color:var(--faint);margin-top:5px}
+  .ov-right{display:flex;flex-direction:column;gap:12px}
+  .stats{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
+  @media(max-width:860px){.stats{grid-template-columns:repeat(3,1fr)}}
+  .stat{background:var(--surface);border:1px solid var(--border);border-radius:11px;padding:11px 12px}
+  .stat .n{font:500 16px/1.2 var(--mono);letter-spacing:-.01em}
+  .stat .l{font-size:10.5px;color:var(--muted);margin-top:2px}
+  .prog{padding:13px 15px}
+  .prog .row{display:flex;justify-content:space-between;align-items:baseline}
+  .prog .row b{font-family:var(--display);font-weight:600;font-size:12.5px}
+  .prog .row span{font:500 11.5px/1 var(--mono);color:var(--muted)}
+  .segs{display:grid;gap:5px;margin-top:9px}
+  .seg{height:8px;border-radius:4px;background:var(--tint);border:1px solid var(--border);transition:.3s}
+  .seg.on{background:var(--good);border-color:var(--good)}
+  .keynums{padding:12px 15px;font-size:12px;color:var(--muted);display:flex;gap:8px 22px;flex-wrap:wrap}
+  .keynums b{font:500 12px var(--mono);color:var(--ink)}
+
+  /* exam cards */
+  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:14px}
+  @media(max-width:700px){.grid{grid-template-columns:1fr}}
+  .exam{overflow:hidden;transition:border-color .2s,background .2s}
+  .exam.cleared{border-color:var(--good-line);background:linear-gradient(180deg,var(--good-soft),var(--surface) 70%)}
+  .exam-top{display:flex;gap:10px;align-items:flex-start;padding:13px 14px 9px}
+  .exam-name{flex:1;min-width:0}
+  .exam-name .t{font-family:var(--display);font-weight:500;font-size:13.5px;line-height:1.3}
+  .exam-name .d{font:400 10.5px/1.4 var(--mono);color:var(--muted);margin-top:3px}
+  .exam-body{padding:0 14px 12px;display:flex;flex-direction:column;gap:9px}
+  .grade-row{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+  .grade-row label{font-size:11.5px;color:var(--muted)}
+  select.grade{font:500 12.5px var(--mono);padding:5px 7px;border:1px solid var(--border);
+    border-radius:8px;background:var(--tint);color:var(--ink);cursor:pointer;min-width:56px}
+  select.grade:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+  .contrib{font:500 10.5px/1 var(--body);padding:4px 8px;border-radius:14px}
+  .contrib.up{color:var(--good);background:var(--good-soft)}
+  .contrib.down{color:var(--bad);background:var(--bad-soft)}
+  .contrib.none{color:var(--faint);background:var(--tint)}
+  .prep{display:flex;flex-wrap:wrap;gap:5px 14px;padding-top:9px;border-top:1px dashed var(--hair)}
+  .chk{display:inline-flex;align-items:center;gap:6px;cursor:pointer;user-select:none;font-size:11.5px;color:var(--muted)}
+  .chk input{position:absolute;opacity:0;width:1px;height:1px}
+  .box{width:15px;height:15px;border:1.5px solid #c3cdd9;border-radius:4px;flex:none;
+    display:grid;place-items:center;transition:.15s;background:var(--surface)}
+  .box svg{width:9px;height:9px;opacity:0;transform:scale(.5);transition:.15s}
+  .chk input:checked+.box{background:var(--good);border-color:var(--good)}
+  .chk input:checked+.box svg{opacity:1;transform:scale(1)}
+  .chk input:checked~.lbl{color:var(--ink)}
+  .chk input:focus-visible+.box{outline:2px solid var(--accent);outline-offset:2px}
+  .chk.big .box{width:19px;height:19px;border-radius:5px}
+  .chk.big .box svg{width:11px;height:11px}
+  .chk.big .lbl{font-family:var(--display);font-weight:500;font-size:12px;color:var(--ink)}
+
+  /* calendar */
+  .cal{margin-top:14px;overflow:hidden}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr)}
+  .cal-grid>div{border-right:1px solid var(--hair);border-bottom:1px solid var(--hair);min-height:58px;padding:6px 7px;position:relative}
+  .cal-grid>div:nth-child(7n){border-right:none}
+  .cal-h{min-height:auto!important;background:var(--tint);font:500 10px/1 var(--body);
+    letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:8px 7px!important}
+  .dnum{font:500 11.5px var(--mono);color:var(--ink)}
+  .cal .blank .dnum{color:transparent}
+  .cal .wknd{background:#fafbfd}
+  .cal .exam-day{background:var(--good-soft)}
+  .cal .exam-day::after{content:"";position:absolute;inset:0;border:1px solid var(--good-line);pointer-events:none}
+  .cal .exam-day .tag{display:block;font:500 9px/1.25 var(--body);color:var(--good);margin-top:3px;word-break:break-word}
+  .cal .tick{position:absolute;top:5px;right:6px;width:14px;height:14px;border-radius:50%;
+    background:var(--good);display:none;place-items:center}
+  .cal .tick svg{width:8px;height:8px}
+  .cal .exam-day.done .tick{display:grid}
+  .cal-legend{display:flex;gap:16px;flex-wrap:wrap;padding:10px 14px;border-top:1px solid var(--hair);
+    font-size:11px;color:var(--muted)}
+  .sw{display:inline-block;width:11px;height:11px;border-radius:3px;vertical-align:-1.5px;margin-right:5px}
+
+  /* tables */
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+  @media(max-width:760px){.two-col{grid-template-columns:1fr}}
+  .tbl{width:100%;border-collapse:collapse;font-size:12.5px}
+  .tbl caption{text-align:left;font-family:var(--display);font-weight:600;font-size:12.5px;
+    padding:12px 15px 8px;color:var(--ink)}
+  .tbl th{font:500 10.5px/1.2 var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--faint);
+    text-align:left;padding:7px 15px;border-top:1px solid var(--hair);border-bottom:1px solid var(--hair);background:var(--tint)}
+  .tbl td{padding:8px 15px;border-bottom:1px solid var(--hair)}
+  .tbl tr:last-child td{border-bottom:none}
+  .tbl .mono{font:500 12px var(--mono)}
+  .tbl .hl td{background:var(--accent-soft)}
+  .tbl .r,.tbl th.r{text-align:right}
+  .formula{padding:11px 15px;border-top:1px solid var(--hair);font-size:11.5px;color:var(--muted)}
+  .formula code{font:500 11px var(--mono);color:var(--ink);background:var(--tint);padding:2px 5px;border-radius:5px}
+
+  details.cc{margin-top:14px}
+  details.cc summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:9px;
+    padding:13px 15px;font-family:var(--display);font-weight:500;font-size:13px}
+  details.cc summary::-webkit-details-marker{display:none}
+  details.cc summary .chev{transition:transform .2s;color:var(--faint)}
+  details.cc[open] summary .chev{transform:rotate(90deg)}
+  details.cc summary .badge{margin-left:auto;font:500 10.5px var(--mono);color:var(--muted);
+    background:var(--tint);border:1px solid var(--border);padding:3px 8px;border-radius:12px}
+
+  .scen{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:14px}
+  @media(max-width:760px){.scen{grid-template-columns:1fr}}
+  .scen .s{padding:13px 14px}
+  .scen .s .tag{font:500 9.5px/1 var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--faint)}
+  .scen .s.pick{border-color:var(--good-line);background:linear-gradient(180deg,var(--good-soft),var(--surface) 75%)}
+  .scen .s.pick .tag{color:var(--good)}
+  .scen .s h3{font-family:var(--display);font-weight:600;font-size:13px;margin-top:5px}
+  .scen .s p{font-size:11.5px;color:var(--muted);margin-top:5px;line-height:1.5}
+  .scen .s .avg{font:500 11px var(--mono);color:var(--ink);margin-top:7px}
+
+  .chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}
+  .chip{font:500 11.5px/1 var(--body);color:var(--muted);background:var(--surface);
+    border:1px solid var(--border);border-radius:8px;padding:7px 10px}
+
+  .foot{display:flex;justify-content:space-between;align-items:center;gap:14px;margin-top:34px;flex-wrap:wrap;
+    padding-top:18px;border-top:1px solid var(--border)}
+  .foot .left{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .saved{font-size:11.5px;color:var(--muted);display:flex;align-items:center;gap:7px}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--good)}
+  .dot.off{background:var(--faint)}
+  .notes{margin-top:16px;font-size:11px;color:var(--faint);line-height:1.6;max-width:86ch}
+  @media(prefers-reduced-motion:reduce){*{transition:none!important}html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div>
+      <div class="eyebrow">Kolegji UBT · Exam session tracker</div>
+      <h1 id="hTitle">Exam Tracker &amp; GPA Planner</h1>
+      <p class="lede" id="hLede"></p>
+    </div>
+    <div class="avg-pill">
+      <div class="k">Running average</div>
+      <div class="v" id="avgVal">–</div>
+      <div class="d" id="avgDelta"></div>
+    </div>
+  </header>
+
+  <div class="card sample-banner" id="sampleBanner" hidden>
+    <b>You're looking at sample data.</b> Nobody else can see what you enter —
+    everything stays in this browser. Open <b>Customize</b> below to set your own
+    average, exams and targets, or use <b>Import</b> at the bottom to load a saved file.
+  </div>
+
+  <!-- settings -->
+  <details class="card settings" id="settingsBox">
+    <summary>
+      <svg class="chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+      Customize — set your own name, average, exams and targets
+    </summary>
+    <div class="set-body">
+      <div class="set-grid">
+        <label>Your name<input id="setName" placeholder="e.g. Alex"></label>
+        <label>Subtitle / note<input id="setSession" placeholder="e.g. final year, pushing for 9.0"></label>
+        <label>Courses completed<input type="number" id="setCount" min="0" step="1"></label>
+        <label>Current average<input type="number" id="setAvg" min="5" max="10" step="0.01"></label>
+        <label>Target from<input type="number" id="setTmin" min="5" max="10" step="0.05"></label>
+        <label>Target to<input type="number" id="setTmax" min="5" max="10" step="0.05"></label>
+        <label>Total courses in degree<input type="number" id="setTotal" min="1" step="1"></label>
+      </div>
+      <h4>Exams in <span id="examsFor"></span> <span style="color:var(--faint);font-weight:400">— name · optional note · day of month (places it on the calendar)</span></h4>
+      <div id="examRows"></div>
+      <button class="btn ghost" id="addExam" type="button">+ Add exam</button>
+      <label class="wide">Skipped / deferred this session (comma-separated, optional)
+        <textarea id="setDeferred" placeholder="Matematikë 1 (1 Oct), Big Data (15 Sep), …"></textarea></label>
+      <div class="set-actions">
+        <button class="btn primary" id="applySet" type="button">Apply changes</button>
+        <button class="btn danger" id="resetProfile" type="button">Reset to sample defaults</button>
+      </div>
+    </div>
+  </details>
+
+  <!-- overview -->
+  <div class="overview">
+    <div class="card gauge">
+      <div class="beaker">
+        <div class="water" id="water"></div>
+        <div class="wline" id="wline"><i id="wlineLbl">8.00</i></div>
+      </div>
+      <div class="cap">Waterline gauge</div>
+      <div class="scale" id="gaugeScale"></div>
+    </div>
+    <div class="ov-right">
+      <div class="stats">
+        <div class="stat"><div class="n" id="stCleared">0</div><div class="l">cleared</div></div>
+        <div class="stat"><div class="n" id="stLogged">0</div><div class="l">grades logged</div></div>
+        <div class="stat"><div class="n" id="stBase">–</div><div class="l">start average</div></div>
+        <div class="stat"><div class="n" id="stTarget">–</div><div class="l">target band</div></div>
+        <div class="stat"><div class="n" id="stFirst">–</div><div class="l">first exam</div></div>
+        <div class="stat"><div class="n" id="stLast">–</div><div class="l">last exam</div></div>
+      </div>
+      <div class="card prog">
+        <div class="row"><b>Session progress</b><span><span id="progCount">0</span> / <span id="progTotal">0</span> cleared</span></div>
+        <div class="segs" id="segs"></div>
+      </div>
+      <div class="card keynums" id="keynums"></div>
+    </div>
+  </div>
+
+  <!-- session picker -->
+  <section id="sessSection">
+    <div class="shead"><h2>Exam sessions</h2><span class="hint">tap one to plan it — grades from every session count toward your average</span></div>
+    <div class="sessbar" id="sessBar"></div>
+  </section>
+
+  <!-- exams -->
+  <section>
+    <div class="shead"><h2 id="examHead">Your exams</h2><span class="hint" id="examHint">Prishtina windows: 13:00–14:30 · 17:30–19:00</span></div>
+    <div class="cap-bar" id="capBar"></div>
+    <p class="sub">Tick <b>done</b> once you've sat it, then log the grade — the waterline reacts live. Small boxes track prep: notes reviewed, past papers, mock run.</p>
+    <div class="grid" id="grid"></div>
+  </section>
+
+  <!-- calendar -->
+  <section id="calSection">
+    <div class="shead"><h2 id="calHead">Calendar</h2><span class="hint">exam days get a ✓ when you mark them done</span></div>
+    <div class="card cal">
+      <div class="cal-multi" id="cal"></div>
+      <div class="cal-legend">
+        <span><span class="sw" style="background:var(--good-soft);border:1px solid var(--good-line)"></span>your exam</span>
+        <span><span class="sw" style="background:#fafbfd;border:1px solid var(--hair)"></span>weekend</span>
+        <span style="margin-left:auto" id="calNote"></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- projections -->
+  <section>
+    <div class="shead"><h2>GPA reference</h2></div>
+    <p class="sub">Left: what your remaining course grades must average for each final-GPA target. Right: where this session lands you if every exam goes at a given level. Both recalculate from your settings.</p>
+    <div class="two-col">
+      <div class="card">
+        <table class="tbl">
+          <caption id="targetCap">Target final average</caption>
+          <thead><tr><th>Target</th><th class="r" id="needHead">Need on remaining</th><th>Note</th></tr></thead>
+          <tbody id="targetBody"></tbody>
+        </table>
+        <div class="formula" id="targetFormula"></div>
+      </div>
+      <div class="card">
+        <table class="tbl">
+          <caption id="rrCap">Ready-reckoner — every exam taken</caption>
+          <thead><tr><th>If grades average</th><th class="r">Your new average</th><th>vs waterline</th></tr></thead>
+          <tbody id="rrBody"></tbody>
+        </table>
+        <div class="formula" id="rrFormula"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- transcript — rendered from profile.completed, hidden when empty -->
+  <section id="ccSection">
+    <div class="shead"><h2>Transcript so far</h2></div>
+    <details class="cc card">
+      <summary>
+        <svg class="chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+        <span id="ccLabel">Show the completed courses</span>
+        <span class="badge" id="ccBadge"></span>
+      </summary>
+      <table class="tbl">
+        <thead><tr><th>Lënda</th><th class="r">ECTS</th><th class="r">Nota</th><th>Shkronjë</th></tr></thead>
+        <tbody id="ccBody"></tbody>
+      </table>
+    </details>
+  </section>
+
+  <!-- plan / scenarios — rendered from profile.scenarios, hidden when empty -->
+  <section id="scenSection">
+    <div class="shead"><h2>The plan, and the fallbacks</h2></div>
+    <p class="sub">Exams are independent — if one isn't ready by its day, drop just that one and carry it to January. Nothing else is affected.</p>
+    <div class="scen" id="scenBox"></div>
+  </section>
+
+  <!-- deferred -->
+  <section id="defSection" hidden>
+    <div class="shead"><h2>Skipped this session</h2></div>
+    <div class="chips" id="defChips"></div>
+  </section>
+
+  <div class="foot">
+    <div class="left">
+      <div class="saved"><span class="dot" id="saveDot"></span><span id="saveText">Progress saves automatically</span></div>
+    </div>
+    <div class="left">
+      <button class="btn" id="exportBtn" type="button">↓ Export data</button>
+      <button class="btn" id="importBtn" type="button">↑ Import data</button>
+      <input type="file" id="importFile" accept="application/json" hidden>
+      <button class="btn danger" id="resetBtn" type="button">Reset ticks</button>
+    </div>
+  </div>
+  <p class="notes" id="footNotes"></p>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var CHECK='<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>';
+  var CHEV='<svg class="chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>';
+
+  /* ---------- exam periods ----------
+     UBT runs five sitting periods a year. The two short ones (April, November)
+     are catch-up windows and cap at 2 exams; the main three cap at 10. */
+  var PERIODS=[
+    {key:"jan", label:"January",   short:"Jan",     cap:10, months:[0]},
+    {key:"apr", label:"April",     short:"Apr",     cap:2,  months:[3]},
+    {key:"jun", label:"June–July", short:"Jun–Jul", cap:10, months:[5,6]},
+    {key:"sep", label:"September", short:"Sep",     cap:10, months:[8]},
+    {key:"nov", label:"November",  short:"Nov",     cap:2,  months:[10]}
+  ];
+  function periodOf(key){
+    for(var i=0;i<PERIODS.length;i++)if(PERIODS[i].key===key)return PERIODS[i];
+    return PERIODS[3];
+  }
+  function sessLabel(sn){return periodOf(sn.period).label+" "+sn.year;}
+  function sessShort(sn){return periodOf(sn.period).short+" "+String(sn.year).slice(2);}
+  function sessCap(sn){return periodOf(sn.period).cap;}
+  /* last calendar day of a period, used to decide whether it has passed */
+  function sessEnd(year,p){var m=p.months[p.months.length-1];return new Date(year,m+1,0,23,59,59);}
+
+  /* Every period still ahead of us this year, plus all of next year. */
+  function upcomingSessions(now){
+    var y=now.getFullYear(),out=[];
+    [y,y+1].forEach(function(yy){
+      PERIODS.forEach(function(p){
+        if(yy===y&&sessEnd(yy,p)<now)return;
+        out.push({key:yy+"-"+p.key,year:yy,period:p.key,exams:[],deferred:""});
+      });
+    });
+    return out;
+  }
+
+  /* Neutral starter profile. Personal data never lives in this file — it is a
+     public static site, so anything here is visible to every visitor. Load your
+     own setup with Import (see my-profile.json, kept out of git). */
+  function makeDefaultProfile(now){
+    var sessions=upcomingSessions(now||new Date());
+    var first=sessions[0];
+    if(first){
+      var y=first.year,m=periodOf(first.period).months[0];
+      first.exams=[
+        {id:"s1",name:"Course One",  date:"",day:11,mon:m},
+        {id:"s2",name:"Course Two",  date:"",day:18,mon:m},
+        {id:"s3",name:"Course Three",date:"",day:25,mon:m}
+      ];
+    }
+    return {
+      name:"",
+      tagline:"Sample data — open Customize to set your own average, exams and targets.",
+      baseCount:10, baseAvg:8.00, targetMin:8.0, targetMax:8.5, totalCourses:24,
+      sample:true, completed:[], scenarios:[],
+      sessions:sessions,
+      active:first?first.key:null
+    };
+  }
+
+  /* Bring any stored/imported profile up to the current shape. Older exports
+     carried a single flat `exams` list with no session around it. */
+  function normalise(p,now){
+    now=now||new Date();
+    if(!p.completed)p.completed=[];
+    if(!p.scenarios)p.scenarios=[];
+    if(!p.tagline)p.tagline=p.session||"";
+    if(!p.sessions||!p.sessions.length){
+      p.sessions=upcomingSessions(now);
+      if(p.exams&&p.exams.length){
+        /* land the legacy list on the period its dates fall in, else the first */
+        var mon=null;
+        p.exams.forEach(function(e){if(mon==null&&e.mon!=null)mon=e.mon;});
+        if(mon==null)mon=8;
+        var target=null;
+        p.sessions.forEach(function(sn){
+          if(!target&&periodOf(sn.period).months.indexOf(mon)>=0)target=sn;});
+        target=target||p.sessions[0];
+        target.exams=p.exams.map(function(e){
+          return {id:e.id,name:e.name,date:e.date||"",day:e.day||null,
+                  mon:e.mon!=null?e.mon:periodOf(target.period).months[0]};
+        });
+        target.deferred=p.deferred||"";
+        p.active=target.key;
+      }
+    }
+    delete p.exams; delete p.deferred; delete p.session;
+    /* keep every stored session (they hold grades), but fold in any period that
+       has since come into range, so the list stays current over time */
+    var have={};p.sessions.forEach(function(sn){have[sn.key]=true;});
+    upcomingSessions(now).forEach(function(sn){if(!have[sn.key])p.sessions.push(sn);});
+    p.sessions.sort(function(a,b){
+      if(a.year!==b.year)return a.year-b.year;
+      return periodOf(a.period).months[0]-periodOf(b.period).months[0];
+    });
+    p.sessions.forEach(function(sn){
+      if(!sn.exams)sn.exams=[];
+      if(sn.deferred==null)sn.deferred="";
+      var months=periodOf(sn.period).months;
+      sn.exams.forEach(function(e){if(e.mon==null)e.mon=months[0];});
+    });
+    if(!p.active||!sessionByKey(p,p.active))p.active=p.sessions.length?p.sessions[0].key:null;
+    return p;
+  }
+  function sessionByKey(p,key){
+    for(var i=0;i<p.sessions.length;i++)if(p.sessions[i].key===key)return p.sessions[i];
+    return null;
+  }
+  var DEFAULT_PROFILE=makeDefaultProfile(new Date());
+
+  var profile=JSON.parse(JSON.stringify(DEFAULT_PROFILE));
+  var state={grades:{},done:{},prep:{}};
+
+  var P_KEY="ubt-tracker-profile-v2", S_KEY="ubt-tracker-state-v2";
+  // storage adapter: claude.ai window.storage -> localStorage (GitHub Pages) -> memory
+  var mem={};
+  var store={
+    get:function(k){
+      if(window.storage&&typeof window.storage.get==="function"){
+        return window.storage.get(k,false).then(function(r){return r?r.value:null;})
+          .catch(function(){return null;});
+      }
+      try{return Promise.resolve(window.localStorage.getItem(k));}
+      catch(e){return Promise.resolve(mem[k]||null);}
+    },
+    set:function(k,v){
+      if(window.storage&&typeof window.storage.set==="function"){
+        return window.storage.set(k,v,false).catch(function(){});
+      }
+      try{window.localStorage.setItem(k,v);}catch(e){mem[k]=v;}
+      return Promise.resolve();
+    },
+    mode:function(){
+      if(window.storage&&typeof window.storage.get==="function")return "claude";
+      try{window.localStorage.setItem("__t","1");window.localStorage.removeItem("__t");return "local";}
+      catch(e){return "memory";}
+    }
+  };
+
+  function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(m){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m];});}
+  function n2(x){return (Math.round(x*100)/100).toFixed(2);}
+  function baseSum(){return profile.baseCount*profile.baseAvg;}
+
+  function act(){return sessionByKey(profile,profile.active)||profile.sessions[0]||{exams:[],deferred:"",year:0,period:"sep"};}
+  function actExams(){return act().exams||[];}
+  function allExams(){
+    var out=[];profile.sessions.forEach(function(sn){
+      (sn.exams||[]).forEach(function(e){out.push(e);});});
+    return out;
+  }
+  function clearedIn(sn){
+    return (sn.exams||[]).filter(function(e){return state.done[e.id];}).length;
+  }
+
+  function ensureState(){
+    var g={},d={},p={};
+    allExams().forEach(function(e){
+      g[e.id]=state.grades[e.id]!=null?state.grades[e.id]:"";
+      d[e.id]=!!state.done[e.id];
+      p[e.id]=state.prep[e.id]||{notes:false,papers:false,mock:false};
+    });
+    state={grades:g,done:d,prep:p};
+  }
+
+  /* the average is cumulative — every graded exam in every session counts */
+  function computeAvg(){
+    var sum=baseSum(),n=profile.baseCount,logged=0;
+    allExams().forEach(function(e){var g=state.grades[e.id];
+      if(g!==""&&g!=null){sum+=Number(g);n++;logged++;}});
+    return {avg:n>0?sum/n:0,logged:logged};
+  }
+
+  /* ---------- builders ---------- */
+  function buildAll(){
+    ensureState();
+    buildHeader();buildSessBar();buildCap();buildSegs();buildCards();buildCalendar();buildTables();
+    buildCompleted();buildScenarios();buildDeferred();toggleDataSections();buildNotes();render();
+  }
+
+  function buildHeader(){
+    document.getElementById("hTitle").innerHTML=profile.name
+      ? esc(profile.name)+"'s Exam Tracker"
+      : "Exam Tracker &amp; GPA Planner";
+    document.getElementById("hLede").textContent=profile.tagline||"";
+    document.getElementById("stBase").textContent=n2(profile.baseAvg);
+    document.getElementById("stTarget").textContent=n2(profile.targetMin).replace(/\.00$/,"")+"–"+n2(profile.targetMax).replace(/\.00$/,"");
+    document.getElementById("wlineLbl").textContent=n2(profile.baseAvg);
+    var span=0.45;
+    document.getElementById("gaugeScale").textContent=n2(profile.baseAvg-span)+" – "+n2(profile.baseAvg+span);
+    var ex=sortedExams(act());
+    document.getElementById("stFirst").textContent=ex.length?dayLabel(ex[0]):"–";
+    document.getElementById("stLast").textContent=ex.length?dayLabel(ex[ex.length-1]):"–";
+    document.getElementById("progTotal").textContent=ex.length;
+    var kn=document.getElementById("keynums");
+    var N=allExams().length, bs=baseSum(), bc=profile.baseCount;
+    var all9=N?((bs+9*N)/(bc+N)):profile.baseAvg;
+    var ceil=profile.totalCourses>bc?((bs+10*(profile.totalCourses-bc))/profile.totalCourses):profile.baseAvg;
+    kn.innerHTML='<span>Grades above <b>'+n2(profile.baseAvg)+'</b> lift your average, below it drag it down</span>'
+      +'<span>Degree ceiling <b>'+n2(ceil)+'</b></span>'
+      +(N?'<span>All '+N+' planned at ~9 → <b>'+n2(all9)+'</b></span>':'');
+  }
+  var MON=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  var DOW=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+  /* Dates are derived from (year, month, day) rather than typed as free text,
+     so the weekday can never disagree with the calendar. */
+  function dayLabel(e){
+    if(!e||!e.day)return "–";
+    return e.day+" "+MON[e.mon];
+  }
+  function fullDate(sn,e){
+    if(!e||!e.day)return "date not set";
+    var d=new Date(sn.year,e.mon,e.day);
+    return DOW[d.getDay()]+" "+e.day+" "+MON[e.mon]+" "+sn.year+(e.date?" · "+e.date:"");
+  }
+  function sortedExams(sn){
+    return (sn.exams||[]).slice().sort(function(a,b){
+      return (a.mon-b.mon)||((a.day||0)-(b.day||0));});
+  }
+
+  function buildSessBar(){
+    var bar=document.getElementById("sessBar");bar.innerHTML="";
+    profile.sessions.forEach(function(sn){
+      var b=document.createElement("button");b.type="button";
+      var n=(sn.exams||[]).length,cap=sessCap(sn),cl=clearedIn(sn);
+      b.className="stab"+(sn.key===profile.active?" on":"")
+        +(n&&cl===n?" done":"")+(n?"":" empty");
+      var meta=!n?"nothing planned":(cl===n?"all "+n+" cleared":cl+" of "+n+" cleared");
+      b.innerHTML='<span class="st-l">'+esc(sessLabel(sn))+'</span>'
+        +'<span class="st-m">'+esc(meta)+' · max '+cap+'</span>';
+      b.addEventListener("click",function(){
+        profile.active=sn.key;saveProfile();buildAll();fillSettings();});
+      bar.appendChild(b);
+    });
+  }
+
+  function buildCap(){
+    var sn=act(),n=(sn.exams||[]).length,cap=sessCap(sn);
+    document.getElementById("examHead").textContent="Your exams — "+sessLabel(sn);
+    var el=document.getElementById("capBar");
+    el.className="cap-bar"+(n>=cap?" full":"");
+    el.innerHTML='<span><b>'+n+'</b> of '+cap+' slots used</span>'
+      +'<span class="cap-track"><span class="cap-fill" style="width:'+Math.min(100,cap?n/cap*100:0)+'%"></span></span>'
+      +'<span>'+(n>=cap?"session full":(cap-n)+" left")+'</span>';
+  }
+
+  function buildSegs(){
+    var segs=document.getElementById("segs");segs.innerHTML="";
+    segs.style.gridTemplateColumns="repeat("+Math.max(actExams().length,1)+",1fr)";
+    actExams().forEach(function(){var s=document.createElement("div");s.className="seg";segs.appendChild(s);});
+  }
+
+  function makeCheck(id,label,big,onchange,checked){
+    var l=document.createElement("label");l.className="chk"+(big?" big":"");
+    var inp=document.createElement("input");inp.type="checkbox";inp.id=id;inp.checked=!!checked;
+    var box=document.createElement("span");box.className="box";box.innerHTML=CHECK;
+    var txt=document.createElement("span");txt.className="lbl";txt.textContent=label;
+    inp.addEventListener("change",function(){onchange(inp.checked);});
+    l.appendChild(inp);l.appendChild(box);l.appendChild(txt);
+    return l;
+  }
+
+  function buildCards(){
+    var grid=document.getElementById("grid");grid.innerHTML="";
+    var sn=act();
+    var list=sortedExams(sn);
+    if(!list.length){
+      grid.innerHTML='<div class="card exam empty-note" style="padding:18px;color:var(--muted)">'
+        +'No exams planned for '+esc(sessLabel(sn))+' yet — open <b>Customize</b> above to add up to '
+        +sessCap(sn)+'.</div>';
+      return;
+    }
+    list.forEach(function(e){
+      var card=document.createElement("div");card.className="card exam";card.id="card-"+e.id;
+      var top=document.createElement("div");top.className="exam-top";
+      top.appendChild(makeCheck(e.id+"-done","Done",true,function(v){state.done[e.id]=v;saveState();render();},state.done[e.id]));
+      var nm=document.createElement("div");nm.className="exam-name";
+      nm.innerHTML='<div class="t">'+esc(e.name)+'</div><div class="d">'+esc(fullDate(sn,e))+'</div>';
+      top.appendChild(nm);
+      var body=document.createElement("div");body.className="exam-body";
+      var gr=document.createElement("div");gr.className="grade-row";
+      var lab=document.createElement("label");lab.textContent="Grade";lab.setAttribute("for",e.id+"-grade");
+      var sel=document.createElement("select");sel.className="grade";sel.id=e.id+"-grade";
+      sel.innerHTML='<option value="">—</option>'+[5,6,7,8,9,10].map(function(g){
+        return '<option value="'+g+'"'+(String(state.grades[e.id])===String(g)?" selected":"")+'>'+g+'</option>';}).join("");
+      sel.addEventListener("change",function(){state.grades[e.id]=sel.value;saveState();render();});
+      var contrib=document.createElement("span");contrib.className="contrib none";
+      contrib.id="contrib-"+e.id;contrib.textContent="no grade yet";
+      gr.appendChild(lab);gr.appendChild(sel);gr.appendChild(contrib);
+      var prep=document.createElement("div");prep.className="prep";
+      [["notes","notes"],["papers","past papers"],["mock","mock run"]].forEach(function(x){
+        prep.appendChild(makeCheck(e.id+"-"+x[0],x[1],false,function(v){state.prep[e.id][x[0]]=v;saveState();},state.prep[e.id][x[0]]));});
+      body.appendChild(gr);body.appendChild(prep);
+      card.appendChild(top);card.appendChild(body);
+      grid.appendChild(card);
+    });
+  }
+
+  function monthWeeks(year,month){
+    var offset=(new Date(year,month,1).getDay()+6)%7;     /* Mon-first */
+    var days=new Date(year,month+1,0).getDate();
+    var cells=[],i;
+    for(i=0;i<offset;i++)cells.push(null);
+    for(i=1;i<=days;i++)cells.push(i);
+    while(cells.length%7)cells.push(null);
+    var weeks=[];
+    for(i=0;i<cells.length;i+=7)weeks.push(cells.slice(i,i+7));
+    return weeks;
+  }
+
+  function buildCalendar(){
+    var sn=act(),cal=document.getElementById("cal");cal.innerHTML="";
+    var months=periodOf(sn.period).months;
+    var placed=(sn.exams||[]).filter(function(e){return e.day>=1&&e.day<=31;});
+    document.getElementById("calSection").hidden=!placed.length;
+    document.getElementById("calHead").textContent=sessLabel(sn);
+    if(!placed.length)return;
+
+    months.forEach(function(m){
+      var byDay={};
+      placed.forEach(function(e){if(e.mon===m)byDay[e.day]=e;});
+
+      var block=document.createElement("div");
+      if(months.length>1){
+        var h=document.createElement("div");h.className="cal-month-h";
+        h.textContent=MON[m]+" "+sn.year;block.appendChild(h);
+      }
+      var grid=document.createElement("div");grid.className="cal-grid";
+      ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].forEach(function(hd){
+        var c=document.createElement("div");c.className="cal-h";c.textContent=hd;grid.appendChild(c);});
+
+      monthWeeks(sn.year,m).forEach(function(wk){wk.forEach(function(d,ci){
+        var c=document.createElement("div");
+        if(d==null){c.className="blank";c.innerHTML='<span class="dnum">0</span>';}
+        else{
+          c.innerHTML='<span class="dnum">'+d+'</span>';
+          if(byDay[d]){
+            c.className="exam-day";c.id="cal-"+byDay[d].id;
+            c.innerHTML+='<span class="tag">'+esc(shortName(byDay[d].name))+'</span>'
+              +'<span class="tick">'+CHECK+'</span>';
+          } else if(ci>=5){c.className="wknd";}
+        }
+        grid.appendChild(c);
+      });});
+      block.appendChild(grid);cal.appendChild(block);
+    });
+
+    document.getElementById("calNote").textContent=
+      sn.deferred?"Skipped subjects listed at the bottom of the page":"";
+  }
+
+  function shortName(n){
+    n=String(n);
+    if(n.length<=14)return n;
+    var words=n.split(" ").filter(Boolean);
+    return words.length>=2?(words[0]+" "+words[words.length-1]).slice(0,16):n.slice(0,14)+"…";
+  }
+
+  function buildTables(){
+    var bc=profile.baseCount,bs=baseSum(),T=profile.totalCourses,rem=T-bc;
+    var tb=document.getElementById("targetBody");tb.innerHTML="";
+    document.getElementById("targetCap").textContent="Target final average — all "+T+" courses";
+    document.getElementById("needHead").textContent="Need on remaining "+Math.max(rem,0);
+    var ceil=rem>0?(bs+10*rem)/T:profile.baseAvg;
+    var targets=[];
+    [8.0,profile.targetMin,profile.baseAvg,profile.targetMax,Math.round(ceil*1000)/1000].forEach(function(t){
+      if(!targets.some(function(x){return Math.abs(x-t)<1e-9;}))targets.push(t);});
+    targets.sort(function(a,b){return a-b;});
+    targets.forEach(function(t){
+      var need=rem>0?(T*t-bs)/rem:null;
+      var isT=(Math.abs(t-profile.targetMin)<1e-9||Math.abs(t-profile.targetMax)<1e-9);
+      var isC=Math.abs(t-ceil)<1e-6, isH=Math.abs(t-profile.baseAvg)<1e-9;
+      var note=isC?"ceiling — perfect run":isH?"hold current pace":(need!=null&&need>10)?"not reachable":isT?"your target":"";
+      var tr=document.createElement("tr");if(isT)tr.className="hl";
+      tr.innerHTML='<td class="mono">'+n2(t)+'</td><td class="mono r">'+(need==null?"—":n2(Math.min(need,10)))
+        +(need!=null&&need>10?'<span style="color:var(--bad)">+</span>':'')+'</td><td>'+esc(note)+'</td>';
+      tb.appendChild(tr);
+    });
+    document.getElementById("targetFormula").innerHTML=
+      'Formula: remaining grades must sum to <code>'+T+' × target − '+n2(bs).replace(/\.00$/,"")+'</code>';
+
+    var N=actExams().length;
+    var rb=document.getElementById("rrBody");rb.innerHTML="";
+    document.getElementById("rrCap").textContent="Ready-reckoner — all "+N+" in "+sessLabel(act());
+    [8,8.5,9,9.5,10].forEach(function(g){
+      var nv=N?(bs+g*N)/(bc+N):profile.baseAvg;
+      var d=nv-profile.baseAvg;
+      var tr=document.createElement("tr");if(Math.abs(g-9)<1e-9)tr.className="hl";
+      tr.innerHTML='<td class="mono">'+(g%1?g.toFixed(1):g)+'</td><td class="mono r">'+n2(nv)+'</td>'
+        +'<td style="color:'+(d>=0?"var(--good)":"var(--bad)")+'">'+(d>=0?"▲ +":"▼ −")+Math.abs(d).toFixed(2)+'</td>';
+      rb.appendChild(tr);
+    });
+    document.getElementById("rrFormula").innerHTML=
+      'Base: '+bc+' courses, grade sum <code>'+n2(bs).replace(/\.00$/,"")+'</code>, average <code>'+n2(profile.baseAvg)+'</code>';
+  }
+
+  function buildCompleted(){
+    var rows=profile.completed||[];
+    var tbody=document.getElementById("ccBody");tbody.innerHTML="";
+    rows.forEach(function(r){
+      var tr=document.createElement("tr");
+      tr.innerHTML='<td>'+esc(r[0])+'</td><td class="mono r">'+r[1]+'</td><td class="mono r">'+r[2]+'</td><td class="mono">'+r[3]+'</td>';
+      tbody.appendChild(tr);});
+    var ects=0,gsum=0;
+    rows.forEach(function(r){ects+=parseFloat(r[1])||0;gsum+=parseFloat(r[2])||0;});
+    document.getElementById("ccLabel").textContent="Show the "+rows.length+" completed course"+(rows.length===1?"":"s");
+    document.getElementById("ccBadge").textContent=
+      n2(ects).replace(/\.00$/,"")+" ECTS \u00b7 avg "+(rows.length?n2(gsum/rows.length):"\u2013");
+  }
+
+  function buildScenarios(){
+    var list=profile.scenarios||[];
+    var box=document.getElementById("scenBox");box.innerHTML="";
+    list.forEach(function(sc){
+      var d=document.createElement("div");
+      d.className="card s"+(sc.pick?" pick":"");
+      d.innerHTML='<div class="tag">'+esc(sc.tag||"")+'</div><h3>'+esc(sc.title||"")+'</h3>'
+        +'<p>'+esc(sc.desc||"")+'</p><div class="avg">'+esc(sc.avg||"")+'</div>';
+      box.appendChild(d);});
+  }
+
+  function buildDeferred(){
+    var sec=document.getElementById("defSection"),box=document.getElementById("defChips");
+    box.innerHTML="";
+    var items=String(act().deferred||"").split(",").map(function(s){return s.trim();}).filter(Boolean);
+    sec.hidden=items.length===0;
+    items.forEach(function(t){var c=document.createElement("span");c.className="chip";c.textContent=t;box.appendChild(c);});
+  }
+
+  function toggleDataSections(){
+    document.getElementById("ccSection").hidden=!(profile.completed&&profile.completed.length);
+    document.getElementById("scenSection").hidden=!(profile.scenarios&&profile.scenarios.length);
+    document.getElementById("sampleBanner").hidden=!profile.sample;
+  }
+
+  function buildNotes(){
+    var el=document.getElementById("footNotes");
+    el.textContent="Averages assume a simple (unweighted) mean of course grades, matching how UBT displays the "
+      +"transcript average — if the final degree GPA is ECTS-weighted, heavier courses count more. Exam dates and "
+      +"Prishtina (UBT-Dukagjini) windows come from the official \u201COrari i Provimeve \u2014 Shtator 2026\u201D; always confirm "
+      +"your section, professor and campus before each exam. Use Export to back up or move your data between devices.";
+  }
+
+  /* ---------- render (live values) ---------- */
+  function render(){
+    var r=computeAvg(),avg=r.avg,base=profile.baseAvg,span=0.45;
+    var pct=Math.max(0,Math.min(1,(avg-(base-span))/(2*span)))*100;
+    var water=document.getElementById("water");
+    water.style.height=pct+"%";
+    var above=avg>base+1e-9,below=avg<base-1e-9;
+    water.style.background=above?"linear-gradient(180deg,#34c06b,var(--good))"
+      :below?"linear-gradient(180deg,#e0616b,var(--bad))"
+      :"linear-gradient(180deg,#31b0cf,var(--accent))";
+    var val=document.getElementById("avgVal");
+    val.textContent=n2(avg);
+    val.style.color=above?"var(--good)":below?"var(--bad)":"var(--ink)";
+    var d=document.getElementById("avgDelta"),diff=avg-base;
+    if(Math.abs(diff)<1e-9){d.textContent="at the waterline";d.style.color="var(--muted)";}
+    else if(diff>0){d.textContent="▲ +"+diff.toFixed(2)+" above "+n2(base);d.style.color="var(--good)";}
+    else{d.textContent="▼ −"+Math.abs(diff).toFixed(2)+" below "+n2(base);d.style.color="var(--bad)";}
+
+    var sn=act(),list=sn.exams||[];
+    var cleared=clearedIn(sn);
+    document.getElementById("stCleared").textContent=cleared+"/"+list.length;
+    document.getElementById("stLogged").textContent=r.logged;
+    document.getElementById("progCount").textContent=cleared;
+    Array.prototype.forEach.call(document.getElementById("segs").children,function(s,i){
+      s.className="seg"+(i<cleared?" on":"");});
+    list.forEach(function(e){
+      var card=document.getElementById("card-"+e.id);
+      if(card)card.classList.toggle("cleared",!!state.done[e.id]);
+      var cd=document.getElementById("cal-"+e.id);
+      if(cd)cd.classList.toggle("done",!!state.done[e.id]);
+      var c=document.getElementById("contrib-"+e.id),g=state.grades[e.id];
+      if(!c)return;
+      if(g===""||g==null){c.className="contrib none";c.textContent="no grade yet";}
+      else if(Number(g)>base){c.className="contrib up";c.textContent="↑ lifts average";}
+      else if(Number(g)<base){c.className="contrib down";c.textContent="↓ dips average";}
+      else{c.className="contrib none";c.textContent="· holds level";}
+    });
+  }
+
+  /* ---------- persistence ---------- */
+  function saveState(){store.set(S_KEY,JSON.stringify(state));}
+  function saveProfile(){store.set(P_KEY,JSON.stringify(profile));}
+
+  /* ---------- settings panel ---------- */
+  function fillSettings(){
+    var sn=act();
+    document.getElementById("setName").value=profile.name||"";
+    document.getElementById("setSession").value=profile.tagline||"";
+    document.getElementById("setCount").value=profile.baseCount;
+    document.getElementById("setAvg").value=profile.baseAvg;
+    document.getElementById("setTmin").value=profile.targetMin;
+    document.getElementById("setTmax").value=profile.targetMax;
+    document.getElementById("setTotal").value=profile.totalCourses;
+    document.getElementById("setDeferred").value=sn.deferred||"";
+    document.getElementById("examsFor").textContent=sessLabel(sn)+" — up to "+sessCap(sn);
+    var rows=document.getElementById("examRows");rows.innerHTML="";
+    sortedExams(sn).forEach(function(e){rows.appendChild(examRow(e,sn));});
+    syncAddBtn();
+  }
+  function rowCount(){return document.querySelectorAll("#examRows .exam-row").length;}
+  function syncAddBtn(){
+    var cap=sessCap(act()),n=rowCount(),btn=document.getElementById("addExam");
+    btn.disabled=n>=cap;
+    btn.textContent=n>=cap?("Session full — "+cap+" is the maximum"):("+ Add exam ("+(cap-n)+" left)");
+  }
+  function examRow(e,sn){
+    sn=sn||act();
+    var months=periodOf(sn.period).months;
+    var row=document.createElement("div");row.className="exam-row";
+    row.dataset.id=e&&e.id?e.id:("x"+Date.now()+Math.floor(Math.random()*1e4));
+    var n=document.createElement("input");n.className="f-name";n.placeholder="Exam name";n.value=e?e.name:"";
+    var dt=document.createElement("input");dt.className="f-note";dt.placeholder="time / room (optional)";dt.value=e&&e.date?e.date:"";
+    row.appendChild(n);row.appendChild(dt);
+    /* month only matters when the period spans two of them (June–July) */
+    if(months.length>1){
+      var ms=document.createElement("select");ms.className="mon";
+      months.forEach(function(m){
+        var o=document.createElement("option");o.value=m;o.textContent=MON[m];
+        if(e&&e.mon===m)o.selected=true;ms.appendChild(o);});
+      row.appendChild(ms);
+    }
+    var dy=document.createElement("input");dy.className="f-day";dy.type="number";dy.min=1;dy.max=31;dy.placeholder="day";
+    if(e&&e.day)dy.value=e.day;
+    row.appendChild(dy);
+    var x=document.createElement("button");x.type="button";x.textContent="✕";x.title="Remove exam";
+    x.addEventListener("click",function(){row.remove();syncAddBtn();});
+    row.appendChild(x);
+    return row;
+  }
+  document.getElementById("addExam").addEventListener("click",function(){
+    if(rowCount()>=sessCap(act()))return;
+    document.getElementById("examRows").appendChild(examRow(null));
+    syncAddBtn();
+  });
+
+  document.getElementById("applySet").addEventListener("click",function(){
+    var sn=act(),months=periodOf(sn.period).months,cap=sessCap(sn);
+    profile.name=document.getElementById("setName").value.trim();
+    profile.tagline=document.getElementById("setSession").value.trim();
+    profile.baseCount=Math.max(0,parseInt(document.getElementById("setCount").value,10)||0);
+    profile.baseAvg=Math.min(10,Math.max(5,parseFloat(document.getElementById("setAvg").value)||8.00));
+    profile.targetMin=parseFloat(document.getElementById("setTmin").value)||profile.baseAvg;
+    profile.targetMax=parseFloat(document.getElementById("setTmax").value)||profile.targetMin;
+    if(profile.targetMax<profile.targetMin){
+      var t=profile.targetMin;profile.targetMin=profile.targetMax;profile.targetMax=t;}
+    profile.totalCourses=Math.max(profile.baseCount,
+      parseInt(document.getElementById("setTotal").value,10)||profile.baseCount);
+    profile.sample=false;
+    sn.deferred=document.getElementById("setDeferred").value.trim();
+
+    var next=[],overflow=0;
+    Array.prototype.forEach.call(document.querySelectorAll("#examRows .exam-row"),function(row){
+      var ins=row.querySelectorAll("input");          /* [0] name, [1] note, [2] day */
+      var name=ins[0].value.trim();if(!name)return;
+      if(next.length>=cap){overflow++;return;}
+      var sel=row.querySelector("select.mon");
+      var mon=sel?parseInt(sel.value,10):months[0];
+      var day=parseInt(ins[2].value,10);
+      var maxDay=new Date(sn.year,mon+1,0).getDate();
+      next.push({id:row.dataset.id,name:name,date:ins[1].value.trim(),
+        mon:mon,day:(day>=1&&day<=maxDay)?day:null});
+    });
+    sn.exams=next;
+    if(overflow)alert(sessLabel(sn)+" allows at most "+cap+" exams, so "+overflow+" row"
+      +(overflow===1?" was":"s were")+" not saved.");
+    saveProfile();buildAll();fillSettings();saveState();
+    document.getElementById("settingsBox").open=false;
+  });
+
+  document.getElementById("resetProfile").addEventListener("click",function(){
+    if(!confirm("Reset everything to the sample setup? Your entries will be cleared."))return;
+    profile=JSON.parse(JSON.stringify(DEFAULT_PROFILE));
+    state={grades:{},done:{},prep:{}};
+    saveProfile();buildAll();saveState();fillSettings();
+  });
+
+  /* ---------- export / import / reset ---------- */
+  document.getElementById("exportBtn").addEventListener("click",function(){
+    var data=JSON.stringify({app:"ubt-exam-tracker",version:2,profile:profile,state:state},null,2);
+    var blob=new Blob([data],{type:"application/json"});
+    var a=document.createElement("a");
+    a.href=URL.createObjectURL(blob);
+    a.download="exam-tracker-"+(profile.name||"data").toLowerCase().replace(/[^a-z0-9]+/g,"-")+".json";
+    document.body.appendChild(a);a.click();
+    setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},400);
+  });
+  document.getElementById("importBtn").addEventListener("click",function(){
+    document.getElementById("importFile").click();});
+  document.getElementById("importFile").addEventListener("change",function(ev){
+    var f=ev.target.files&&ev.target.files[0];if(!f)return;
+    var rd=new FileReader();
+    rd.onload=function(){
+      try{
+        var data=JSON.parse(rd.result);
+        if(data&&data.profile){
+          profile=normalise(data.profile,new Date());
+          profile.sample=false;
+        }
+        if(data&&data.state){state=data.state;}
+        saveProfile();buildAll();saveState();fillSettings();
+      }catch(e){alert("That file doesn't look like an exam-tracker export.");}
+      ev.target.value="";
+    };
+    rd.readAsText(f);
+  });
+  document.getElementById("resetBtn").addEventListener("click",function(){
+    var sn=act();
+    if(!confirm("Clear ticks and grades for "+sessLabel(sn)+"? Other sessions keep theirs."))return;
+    (sn.exams||[]).forEach(function(e){state.grades[e.id]="";state.done[e.id]=false;
+      state.prep[e.id]={notes:false,papers:false,mock:false};});
+    saveState();buildAll();
+  });
+
+  function setSaveState(){
+    var dot=document.getElementById("saveDot"),txt=document.getElementById("saveText");
+    var m=store.mode();
+    if(m==="claude"){dot.className="dot";txt.textContent="Progress saves automatically";}
+    else if(m==="local"){dot.className="dot";txt.textContent="Progress saves in this browser";}
+    else{dot.className="dot off";txt.textContent="Session only — use Export to keep your data";}
+  }
+
+  /* ---------- init ---------- */
+  function init(){
+    setSaveState();
+    store.get(P_KEY).then(function(pv){
+      if(pv){try{var p=JSON.parse(pv);
+        if(p&&(p.sessions||p.exams))profile=normalise(p,new Date());
+      }catch(e){}}
+      return store.get(S_KEY);
+    }).then(function(sv){
+      if(sv){try{var s=JSON.parse(sv);if(s&&s.grades)state=s;}catch(e){}}
+      buildAll();fillSettings();
+    }).catch(function(){buildAll();fillSettings();});
+  }
+  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);
+  else init();
+
+  // PWA service worker (only when served over http/https, e.g. GitHub Pages)
+  if("serviceWorker" in navigator&&/^https?:$/.test(location.protocol)){
+    window.addEventListener("load",function(){
+      navigator.serviceWorker.register("./sw.js").catch(function(){});
+    });
+  }
+})();
+</script>
+</body>
+</html>
