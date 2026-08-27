@@ -83,7 +83,7 @@ something working. Open **Customize** to replace it with your own average,
 targets and exam list.
 
 > [!IMPORTANT]
-> This is a public static site, so anything committed to `index.html` is
+> This is a public static site, so anything committed to `app.js` is
 > readable by every visitor via view-source. Keep real transcripts out of the
 > repo — put them in a gitignored `my-profile.json` and load it through
 > **Import** instead.
@@ -114,11 +114,14 @@ git push
 
 ## Stack
 
-No build step, no dependencies, no framework — the whole app is one HTML file.
+No build step, no dependencies, no framework — three plain files.
 
 ```
-index.html              markup, styles and logic in one file
-sw.js                   service worker — cache-first with background refresh
+index.html              markup
+app.css                 styles — warm palette, mobile-first, bottom tab bar
+app.js                  logic — vanilla JS, no dependencies
+sw.js                   service worker — cache-first with background refresh,
+                        also caches Google Fonts for offline use
 manifest.webmanifest    PWA metadata
 icon-192.png            home-screen icons
 icon-512.png
