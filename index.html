@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>UBT Exam Tracker</title>
-<meta name="description" content="Exam session tracker and GPA planner with a live waterline gauge.">
+<meta name="description" content="Exam pool + session planner and GPA tracker with a live waterline gauge.">
 <meta name="theme-color" content="#f6f1e8">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -34,43 +34,9 @@
     </div>
     <button class="btn" id="customizeBtn" type="button">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h16"/><circle cx="9" cy="7" r="2.4" fill="var(--surface)"/><circle cx="15" cy="12" r="2.4" fill="var(--surface)"/><circle cx="8" cy="17" r="2.4" fill="var(--surface)"/></svg>
-      Customize
+      Set up
     </button>
   </header>
-
-  <div class="card sample-banner" id="sampleBanner" hidden>
-    <b>You're looking at sample data.</b> Nobody else can see what you enter —
-    everything stays on this device. Tap <b>Customize</b> to set your own
-    average, exams and targets, or use <b>Import</b> at the bottom to load a saved file.
-  </div>
-
-  <!-- settings -->
-  <details class="card settings" id="settingsBox">
-    <summary>
-      <svg class="chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
-      Customize — your name, average, exams and targets
-    </summary>
-    <div class="set-body">
-      <div class="set-grid">
-        <label>Your name<input id="setName" placeholder="e.g. Alex" autocomplete="off"></label>
-        <label>Subtitle / note<input id="setSession" placeholder="e.g. final year, pushing for 9.0" autocomplete="off"></label>
-        <label>Courses completed<input type="number" id="setCount" min="0" step="1" inputmode="numeric"></label>
-        <label>Current average<input type="number" id="setAvg" min="5" max="10" step="0.01" inputmode="decimal"></label>
-        <label>Target from<input type="number" id="setTmin" min="5" max="10" step="0.05" inputmode="decimal"></label>
-        <label>Target to<input type="number" id="setTmax" min="5" max="10" step="0.05" inputmode="decimal"></label>
-        <label>Total courses in degree<input type="number" id="setTotal" min="1" step="1" inputmode="numeric"></label>
-      </div>
-      <h4>Exams in <span id="examsFor"></span> <span class="h4-note">— name · optional note · day of month (places it on the calendar)</span></h4>
-      <div id="examRows"></div>
-      <button class="btn ghost" id="addExam" type="button">+ Add exam</button>
-      <label class="wide">Skipped / deferred this session (comma-separated, optional)
-        <textarea id="setDeferred" placeholder="e.g. Calculus II, Operating Systems"></textarea></label>
-      <div class="set-actions">
-        <button class="btn primary" id="applySet" type="button">Apply changes</button>
-        <button class="btn danger" id="resetProfile" type="button">Reset to sample defaults</button>
-      </div>
-    </div>
-  </details>
 
   <!-- overview -->
   <section id="overviewSection">
@@ -80,7 +46,7 @@
         <div class="v" id="avgVal">–</div>
         <div class="d" id="avgDelta"></div>
         <div class="hero-prog">
-          <div class="row"><b>Session progress</b><span><span id="progCount">0</span> / <span id="progTotal">0</span> cleared</span></div>
+          <div class="row"><b>Session progress</b><span><span id="progCount">0</span> / <span id="progTotal">0</span> sat</span></div>
           <div class="segs" id="segs"></div>
         </div>
       </div>
@@ -94,8 +60,8 @@
       </div>
     </div>
     <div class="stats">
-      <div class="stat"><div class="n" id="stCleared">0</div><div class="l">cleared</div></div>
-      <div class="stat"><div class="n" id="stLogged">0</div><div class="l">grades logged</div></div>
+      <div class="stat"><div class="n" id="stCleared">0</div><div class="l">passed this session</div></div>
+      <div class="stat"><div class="n" id="stPool">0</div><div class="l">left in the pool</div></div>
       <div class="stat"><div class="n" id="stBase">–</div><div class="l">start average</div></div>
       <div class="stat"><div class="n" id="stTarget">–</div><div class="l">target band</div></div>
       <div class="stat"><div class="n" id="stFirst">–</div><div class="l">first exam</div></div>
@@ -104,29 +70,36 @@
     <div class="card keynums" id="keynums"></div>
   </section>
 
-  <!-- session picker -->
+  <!-- session picker: year tabs, then that year's sessions -->
   <section id="sessSection">
-    <div class="shead"><h2>Exam sessions</h2><span class="hint">tap one to plan it — grades from every session count toward your average</span></div>
+    <div class="shead"><h2>Exam sessions</h2><span class="hint">the green dot marks where “now” is — grades count toward your average from any session</span></div>
+    <div class="yearbar" id="yearBar"></div>
     <div class="sessbar" id="sessBar"></div>
   </section>
 
-  <!-- exams -->
+  <!-- exams in the selected session -->
   <section id="examsSection">
-    <div class="shead"><h2 id="examHead">Your exams</h2><span class="hint" id="examHint">Prishtina windows: 13:00–14:30 · 17:30–19:00</span></div>
-    <div class="cap-bar" id="capBar"></div>
-    <p class="sub">Tap <b>Mark done</b> once you've sat it, then tap the grade — the waterline reacts live. The small chips track prep: notes reviewed, past papers, mock run.</p>
+    <div class="shead"><h2 id="examHead">Your exams</h2><span class="hint" id="examHint">which Dukagjini window applies depends on the professor</span></div>
+    <details class="card pick" id="pickBox" data-keep>
+      <summary>
+        <svg class="chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+        Add exams to this session
+        <span class="badge" id="pickBadge"></span>
+      </summary>
+      <div class="pick-list" id="pickList"></div>
+    </details>
+    <p class="sub">Tick exams from your pool above — nothing is retyped. Passing an exam (grade 6+) removes it from the pool everywhere; a 5 keeps it there flagged <b>retake</b>.</p>
     <div class="grid" id="grid"></div>
   </section>
 
   <!-- calendar -->
   <section id="calSection">
-    <div class="shead"><h2 id="calHead">Calendar</h2><span class="hint">exam days get a ✓ when you mark them done</span></div>
+    <div class="shead"><h2 id="calHead">Calendar</h2><span class="hint">exam days get a ✓ once a grade is logged</span></div>
     <div class="card cal">
       <div class="cal-multi" id="cal"></div>
       <div class="cal-legend">
         <span><span class="sw sw-exam"></span>your exam</span>
         <span><span class="sw sw-wknd"></span>weekend</span>
-        <span class="cal-note" id="calNote"></span>
       </div>
     </div>
   </section>
@@ -134,7 +107,7 @@
   <!-- projections -->
   <section id="gpaSection">
     <div class="shead"><h2>GPA reference</h2></div>
-    <p class="sub">Left: what your remaining course grades must average for each final-GPA target. Right: where this session lands you if every exam goes at a given level. Both recalculate from your settings.</p>
+    <p class="sub">Left: what your remaining course grades must average for each final-GPA target. Right: where the open session lands you if every pending exam comes in at a given grade. Both recalculate live.</p>
     <div class="two-col">
       <div class="card">
         <div class="tbl-scroll">
@@ -149,7 +122,7 @@
       <div class="card">
         <div class="tbl-scroll">
         <table class="tbl">
-          <caption id="rrCap">Ready-reckoner — every exam taken</caption>
+          <caption id="rrCap">Ready-reckoner</caption>
           <thead><tr><th>If grades average</th><th class="r">Your new average</th><th>vs waterline</th></tr></thead>
           <tbody id="rrBody"></tbody>
         </table>
@@ -159,35 +132,57 @@
     </div>
   </section>
 
-  <!-- transcript — rendered from profile.completed, hidden when empty -->
-  <section id="ccSection">
-    <div class="shead"><h2>Transcript so far</h2></div>
-    <details class="cc card">
+  <!-- setup -->
+  <section id="setupSection">
+    <div class="shead"><h2>Set up</h2><span class="hint">pool → sessions → details</span></div>
+    <details class="card settings" id="poolBox" data-keep>
       <summary>
         <svg class="chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
-        <span id="ccLabel">Show the completed courses</span>
-        <span class="badge" id="ccBadge"></span>
+        Exam pool — everything you still have to sit
+        <span class="badge" id="poolBadge"></span>
       </summary>
-      <div class="tbl-scroll">
-      <table class="tbl">
-        <thead><tr><th>Lënda</th><th class="r">ECTS</th><th class="r">Nota</th><th>Shkronjë</th></tr></thead>
-        <tbody id="ccBody"></tbody>
-      </table>
+      <div class="set-body">
+        <p class="set-hint">Name · semester · date as <b>dd.mm.yyyy</b> (places it on the calendar). Removing an exam here also removes its grade and session entries.</p>
+        <div id="poolRows"></div>
+        <div class="set-actions">
+          <button class="btn ghost" id="addPool" type="button">+ Add exam</button>
+          <button class="btn primary" id="savePool" type="button">Save pool</button>
+        </div>
       </div>
     </details>
-  </section>
-
-  <!-- plan / scenarios — rendered from profile.scenarios, hidden when empty -->
-  <section id="scenSection">
-    <div class="shead"><h2>The plan, and the fallbacks</h2></div>
-    <p class="sub">Exams are independent — if one isn't ready by its day, drop just that one and carry it to January. Nothing else is affected.</p>
-    <div class="scen" id="scenBox"></div>
-  </section>
-
-  <!-- deferred -->
-  <section id="defSection" hidden>
-    <div class="shead"><h2>Skipped this session</h2></div>
-    <div class="chips" id="defChips"></div>
+    <details class="card settings" id="sessBox" data-keep>
+      <summary>
+        <svg class="chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+        Exam sessions — the sitting periods you plan around
+      </summary>
+      <div class="set-body">
+        <p class="set-hint">Label · year · month. A session keeps its picked exams when you edit it.</p>
+        <div id="sessRows"></div>
+        <div class="set-actions">
+          <button class="btn ghost" id="addSess" type="button">+ Add session</button>
+          <button class="btn primary" id="saveSess" type="button">Save sessions</button>
+        </div>
+      </div>
+    </details>
+    <details class="card settings" id="detailsBox" data-keep>
+      <summary>
+        <svg class="chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+        Your details — name, average and targets
+      </summary>
+      <div class="set-body">
+        <div class="set-grid">
+          <label>Your name<input id="setName" placeholder="e.g. Alex" autocomplete="off"></label>
+          <label>Courses completed<input type="number" id="setCount" min="0" step="1" inputmode="numeric"></label>
+          <label>Current average<input type="number" id="setAvg" min="5" max="10" step="0.01" inputmode="decimal"></label>
+          <label>Total courses in degree<input type="number" id="setTotal" min="1" step="1" inputmode="numeric"></label>
+          <label>Target from<input type="number" id="setTmin" min="5" max="10" step="0.05" inputmode="decimal"></label>
+          <label>Target to<input type="number" id="setTmax" min="5" max="10" step="0.05" inputmode="decimal"></label>
+        </div>
+        <div class="set-actions">
+          <button class="btn primary" id="saveDetails" type="button">Save details</button>
+        </div>
+      </div>
+    </details>
   </section>
 
   <div class="foot">
@@ -198,7 +193,7 @@
       <button class="btn" id="exportBtn" type="button">↓ Export data</button>
       <button class="btn" id="importBtn" type="button">↑ Import data</button>
       <input type="file" id="importFile" accept="application/json" hidden>
-      <button class="btn danger" id="resetBtn" type="button">Reset ticks</button>
+      <button class="btn danger" id="resetBtn" type="button">Reset all</button>
     </div>
   </div>
   <p class="notes" id="footNotes"></p>
@@ -223,7 +218,7 @@
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 20v-8M12 20V5M19 20v-5"/></svg>
     <span>Insights</span>
   </a>
-  <a href="#settingsBox" id="navSet">
+  <a href="#setupSection" id="navSet">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h16"/><circle cx="9" cy="7" r="2.4" fill="var(--bg)"/><circle cx="15" cy="12" r="2.4" fill="var(--bg)"/><circle cx="8" cy="17" r="2.4" fill="var(--bg)"/></svg>
     <span>Set up</span>
   </a>

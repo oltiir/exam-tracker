@@ -24,39 +24,41 @@ depends on how many courses you have already banked. This makes that visible
 
 | | |
 |---|---|
-| 🌊 **Waterline gauge** | Your starting average is the waterline. Log a grade and the bar moves — green above the line, red below. No arithmetic in your head. |
-| 🗓 **All five sittings** | January, April, June–July, September and November, across this year and next. Plan each one separately. |
-| 🚦 **Slot limits** | Each sitting has a cap and the app enforces it — you cannot over-book a session by accident. |
-| ✅ **Per-exam tracking** | Tick *done*, log the grade, tick prep: notes reviewed · past papers · mock run. |
-| 📅 **Real calendars** | Weekday alignment computed from the actual date, so the grid can never disagree with reality. June–July renders both months. |
-| 📊 **GPA tables** | Target bands and a ready-reckoner, recomputed against *your* numbers. |
-| 💾 **Export / Import** | Full state as JSON — back it up or move it between devices. |
-| 📴 **Offline** | Service worker caches everything after first load. Installable to the home screen. |
+| 🧺 **One exam pool** | Every course you still have to sit lives in a single master list — name, semester, official date. Enter it once. |
+| 🎯 **Sessions draw from it** | A session (September 2026, January 2027, …) is just a set of ticks against the pool. Change your mind by unticking — nothing is retyped. |
+| ✅ **Pass leaves the pool** | Grade 6+ removes the exam from every picker for good. A 5 keeps it in the pool flagged **retake**, ready to tick into a later session. |
+| 🌊 **Waterline gauge** | Your starting average is the waterline. Log a grade and the bar moves — green above the line, red below. Failed sittings don't count against it. |
+| 📅 **Live calendars** | Built from the selected session's actual dates, one Monday-first grid per month spanned — an 01.10 exam inside the September session simply adds an October grid. |
+| 📊 **GPA tables** | Target bands (full precision, so the ceiling row is honest) and a ready-reckoner over the session's pending exams. |
+| 💾 **Export / Import** | Full state as JSON — back it up or move it between devices. Old-format exports convert on import. |
+| 📴 **Offline** | Service worker caches everything (fonts included) after first load. Installable to the home screen. |
 
 ---
 
-## Exam sittings
+## Pool + sessions model
 
-UBT runs five periods a year. The two short ones are catch-up windows:
+The data model is deliberately small — one localStorage key holding:
 
-| Period | Max exams |
-|---|:---:|
-| January | 10 |
-| April | 2 |
-| June – July | 10 |
-| September | 10 |
-| November | 2 |
+```js
+{
+  profile:  { name, baseCount, baseAvg, targetMin, targetMax, totalCourses },
+  pool:     [ { id, name, sem, date } ],              // every exam still to sit
+  sessions: [ { id, label, year, month, entries: [ { examId, slot } ] } ],
+  results:  { [examId]: { grade, sessionId, sat } },  // one result per exam
+  prep:     { [examId]: { notes, papers, mock } }
+}
+```
 
-The app shows every period still ahead of you this year plus all of next
-year — so from late August 2026 that is September and November 2026, then all
-five of 2027. The list rolls forward on its own as periods pass, and a sitting
-you have already entered grades for is never dropped.
+Grades live **on the exam**, not on the session — passing a course anywhere
+passes it everywhere. On load the app auto-selects the next upcoming session
+(latest exam date in it, falling back to the end of its month), and the green
+dot marks where "now" is while you browse other sessions. Year tabs appear for
+whatever years your sessions cover.
 
-Pick a sitting from the strip at the top of **Exam sessions**. Everything below
-it — the exam cards, the capacity meter, the calendar, the progress bar — is
-scoped to that sitting. The waterline gauge above stays **cumulative**: it
-counts every graded exam across every session, because that is what your
-average actually is.
+The waterline gauge stays **cumulative**: it counts every passing grade across
+every session, because that is what your average actually is. Append
+`?today=2026-12-15` to the URL to preview which session a future date would
+auto-select.
 
 ---
 
@@ -78,9 +80,9 @@ Everything you enter lives in that browser's `localStorage`. There is no
 account, no server and no analytics — nothing you type leaves the device, and
 nobody else opening the link sees any of it.
 
-The app ships with a small **sample profile** so a first-time visitor sees
-something working. Open **Customize** to replace it with your own average,
-targets and exam list.
+The app ships pre-seeded with the 12 remaining courses from the official
+"Orari i Provimeve — Shtator 2026" and a September 2026 session already
+planned. Open **Set up** to edit the pool, the sessions or your details.
 
 > [!IMPORTANT]
 > This is a public static site, so anything committed to `app.js` is
