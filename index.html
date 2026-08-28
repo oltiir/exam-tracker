@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>UBT Exam Tracker</title>
-<meta name="description" content="Exam pool + session planner and GPA tracker with a live waterline gauge.">
+<meta name="description" content="Exam pool + session planner, GPA tracker and offline class schedule.">
 <meta name="theme-color" content="#f6f1e8">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -74,6 +74,10 @@ try{var _t=localStorage.getItem("ubt-theme");if(_t)document.documentElement.setA
       <div class="stat"><div class="n" id="stLast">–</div><div class="l" data-i18n="lastExam">last exam</div></div>
     </div>
     <div class="card keynums" id="keynums"></div>
+    <div class="card trend" id="trendCard" hidden>
+      <div class="trend-head"><b data-i18n="trendH">Average over time</b><span id="trendDelta"></span></div>
+      <svg id="trendSvg" width="100%" height="64" role="img"></svg>
+    </div>
   </section>
 
   <!-- session picker: year tabs, then that year's sessions -->
@@ -116,6 +120,26 @@ try{var _t=localStorage.getItem("ubt-theme");if(_t)document.documentElement.setA
         <span><span class="sw sw-wknd"></span><span data-i18n="legendWknd">weekend</span></span>
       </div>
     </div>
+  </section>
+
+  <!-- university schedule -->
+  <section id="schedSection">
+    <div class="shead"><h2 data-i18n="schedH">University schedule</h2><span class="hint" data-i18n="schedHint">works offline — it always knows where you are in the week</span></div>
+    <div class="card now-card" id="nowCard"></div>
+    <div class="card sched-list" id="schedList" hidden></div>
+    <details class="card settings" id="schedBox" data-keep>
+      <summary>
+        <svg class="chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+        <span data-i18n="editSched">Edit schedule — day, time, subject, room</span>
+      </summary>
+      <div class="set-body">
+        <div id="schedRows" class="sched-rows"></div>
+        <div class="set-actions">
+          <button class="btn ghost" id="addSched" type="button" data-i18n="addClass">+ Add class</button>
+          <button class="btn primary" id="saveSched" type="button" data-i18n="saveSched">Save schedule</button>
+        </div>
+      </div>
+    </details>
   </section>
 
   <!-- cleared history -->
@@ -204,12 +228,19 @@ try{var _t=localStorage.getItem("ubt-theme");if(_t)document.documentElement.setA
       <div class="set-body">
         <div class="set-grid">
           <label><span data-i18n="lblName">Your name</span><input id="setName" data-i18n-ph="phName" placeholder="e.g. Alex" autocomplete="off"></label>
+          <label><span data-i18n="lblUniEmail">Uni email</span><input id="setUniEmail" type="email" data-i18n-ph="phUniEmail" placeholder="name.surname@ubt-uni.net" autocomplete="off"></label>
+          <label><span data-i18n="lblUniId">Student ID</span><input id="setUniId" data-i18n-ph="phUniId" placeholder="e.g. 22-123-456" autocomplete="off"></label>
+          <label><span data-i18n="lblYear">Year of studies</span><select id="setYear"></select></label>
+          <label class="span2"><span data-i18n="lblSpec">Specialization</span><select id="setSpec"></select></label>
           <label><span data-i18n="lblCount">Courses completed</span><input type="number" id="setCount" min="0" step="1" inputmode="numeric"></label>
           <label><span data-i18n="lblAvg">Current average</span><input type="number" id="setAvg" min="5" max="10" step="0.01" inputmode="decimal"></label>
           <label><span data-i18n="lblTotal">Total courses in degree</span><input type="number" id="setTotal" min="1" step="1" inputmode="numeric"></label>
           <label><span data-i18n="lblTmin">Target from</span><input type="number" id="setTmin" min="5" max="10" step="0.05" inputmode="decimal"></label>
           <label><span data-i18n="lblTmax">Target to</span><input type="number" id="setTmax" min="5" max="10" step="0.05" inputmode="decimal"></label>
+          <label><span data-i18n="lblEcts">ECTS completed</span><input type="number" id="setEcts" min="0" step="1" inputmode="numeric"></label>
+          <label><span data-i18n="lblAvgW">Weighted average (optional)</span><input type="number" id="setAvgW" min="5" max="10" step="0.01" inputmode="decimal"></label>
         </div>
+        <div class="spec-panel" id="specPanel" hidden></div>
         <div class="set-actions">
           <button class="btn primary" id="saveDetails" type="button" data-i18n="saveDetails">Save details</button>
         </div>
@@ -222,6 +253,7 @@ try{var _t=localStorage.getItem("ubt-theme");if(_t)document.documentElement.setA
       <div class="saved"><span class="dot" id="saveDot"></span><span id="saveText"></span></div>
     </div>
     <div class="left">
+      <button class="btn" id="shareBtn" type="button" data-i18n="shareB" hidden>📤 Share backup</button>
       <button class="btn" id="exportBtn" type="button" data-i18n="exportB">↓ Export data</button>
       <button class="btn" id="importBtn" type="button" data-i18n="importB">↑ Import data</button>
       <input type="file" id="importFile" accept="application/json" hidden>
@@ -234,24 +266,56 @@ try{var _t=localStorage.getItem("ubt-theme");if(_t)document.documentElement.setA
 
 <!-- mobile bottom navigation -->
 <nav class="bnav" aria-label="Sections">
-  <a href="#top" id="navHome" class="on">
+  <a href="#top" data-nav="top" class="on">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 9.5V21h14V9.5"/></svg>
     <span data-i18n="navOverview">Overview</span>
   </a>
-  <a href="#examsSection" id="navExams">
+  <a href="#examsSection" data-nav="examsSection">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="4"/><path d="M9 12l2.2 2.2L15.5 10"/></svg>
     <span data-i18n="navExams">Exams</span>
   </a>
-  <a href="#calSection" id="navCal">
+  <a href="#calSection" data-nav="calSection">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="16" rx="3"/><path d="M3.5 10h17M8 2.8v3.7M16 2.8v3.7"/></svg>
     <span data-i18n="navCal">Calendar</span>
   </a>
-  <a href="#gpaSection" id="navStats">
+  <a href="#schedSection" data-nav="schedSection">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>
+    <span data-i18n="navSched">Schedule</span>
+  </a>
+  <a href="#gpaSection" data-nav="gpaSection">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 20v-8M12 20V5M19 20v-5"/></svg>
     <span data-i18n="navStats">Insights</span>
   </a>
-  <a href="#setupSection" id="navSet">
+  <a href="#setupSection" data-nav="setupSection">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h16"/><circle cx="9" cy="7" r="2.4" fill="var(--bg)"/><circle cx="15" cy="12" r="2.4" fill="var(--bg)"/><circle cx="8" cy="17" r="2.4" fill="var(--bg)"/></svg>
+    <span data-i18n="navSet">Set up</span>
+  </a>
+</nav>
+
+<!-- desktop sidebar navigation (wide screens only) -->
+<nav class="snav" aria-label="Sections">
+  <a href="#top" data-nav="top" class="on">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 9.5V21h14V9.5"/></svg>
+    <span data-i18n="navOverview">Overview</span>
+  </a>
+  <a href="#examsSection" data-nav="examsSection">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="4"/><path d="M9 12l2.2 2.2L15.5 10"/></svg>
+    <span data-i18n="navExams">Exams</span>
+  </a>
+  <a href="#calSection" data-nav="calSection">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="16" rx="3"/><path d="M3.5 10h17M8 2.8v3.7M16 2.8v3.7"/></svg>
+    <span data-i18n="navCal">Calendar</span>
+  </a>
+  <a href="#schedSection" data-nav="schedSection">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>
+    <span data-i18n="navSched">Schedule</span>
+  </a>
+  <a href="#gpaSection" data-nav="gpaSection">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 20v-8M12 20V5M19 20v-5"/></svg>
+    <span data-i18n="navStats">Insights</span>
+  </a>
+  <a href="#setupSection" data-nav="setupSection">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h16"/><circle cx="9" cy="7" r="2.4" fill="var(--surface)"/><circle cx="15" cy="12" r="2.4" fill="var(--surface)"/><circle cx="8" cy="17" r="2.4" fill="var(--surface)"/></svg>
     <span data-i18n="navSet">Set up</span>
   </a>
 </nav>

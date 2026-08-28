@@ -13,9 +13,70 @@
   var MON_FULL_SQ=["Janar","Shkurt","Mars","Prill","Maj","Qershor","Korrik","Gusht",
                    "Shtator","Tetor","Nëntor","Dhjetor"];
   var DOW_SQ=["Die","Hën","Mar","Mër","Enj","Pre","Sht"];
+  var DAYS=["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+  var DAYS_SQ=["E hënë","E martë","E mërkurë","E enjte","E premte","E shtunë","E diel"];
   var SLOTS=["","13:00–14:30","17:30–19:00","15:00–16:30 (Prizren)","9:00–10:30 (Ferizaj)"];
   /* month/day names currently in use — swapped by the language toggle */
-  var LOC={MON:MON,DOW:DOW,MON_FULL:MON_FULL};
+  var LOC={MON:MON,DOW:DOW,MON_FULL:MON_FULL,DAYS:DAYS};
+
+  /* ---------- year-3 curriculum (from "Specializimet Semestri 5 & 6") ---------- */
+  var SPECS={
+    cyber:{sq:"Siguria Kibernetike",en:"Cybersecurity",
+      s5:["Kriptografia","Siguria Kibernetike"],
+      s6:["Infrastruktura dhe Siguria e IT-së","Siguria e Big Data"]},
+    se:{sq:"Inxhinieria Softwerike",en:"Software Engineering",
+      s5:["Dizajni i Sistemit të Softuerit","Paternat e Dizajnit dhe Refaktorimi i Kodit"],
+      s6:["Arkitektura Softuerike","Testimi i Softuerit dhe Sigurimi i Cilësisë"]},
+    data:{sq:"Inxhinieria e të Dhënave & AI",en:"Data Engineering & AI",
+      s5:["Modelet e të Dhënave dhe Bazat e të Dhënave","Sistemet e Procesimit të të Dhënave Dizajnuese"],
+      s6:["Modelet e Mësimit Makinor","Shkenca e të Dhënave dhe Vizualizimi me Python"]},
+    web:{sq:"Web Developing",en:"Web & Mobile",
+      s5:["Programimi në Anën e Serverit","Web Shërbimet / Web API's"],
+      s6:["Zhvillimi i Web-it në Anën e Klientit","Zhvillimi i Aplikacioneve Mobile"]},
+    net:{sq:"Inxhinieria e Komunikimit",en:"Networking & Telecom",
+      s5:["Rrjetat Kompjuterike 2","Bazat e Telekomunikacionit dhe Rrjeteve pa Tela"],
+      s6:["Komunikimet Mobile","Menaxhimi dhe Siguria e Rrjeteve"]}
+  };
+  var COMMON={
+    s5:["Bazat e Inteligjencës Artificiale","Sistemet e Ndërlidhura","Menaxhimi i Projekteve dhe Ndërmarrësia"],
+    s6:["Cloud Computing","Lënda Laboratorike 2 – Projekt Grupor"],
+    e5:["Infrastruktura e Serverëve","Interneti i Gjërave (IoT)"],
+    e6:["Orientimi në Karrierë, Komunikim dhe Zhvillim","Programimi i Lojërave"]
+  };
+  /* every year-3 subject for a specialization, tagged by kind */
+  function curriculum(k){
+    var sp=SPECS[k];if(!sp)return [];
+    var out=[];
+    COMMON.s5.forEach(function(n){out.push({name:n,sem:5,kind:"oblig"});});
+    sp.s5.forEach(function(n){out.push({name:n,sem:5,kind:"spec"});});
+    COMMON.e5.forEach(function(n){out.push({name:n,sem:5,kind:"elect"});});
+    COMMON.s6.forEach(function(n){out.push({name:n,sem:6,kind:"oblig"});});
+    sp.s6.forEach(function(n){out.push({name:n,sem:6,kind:"spec"});});
+    COMMON.e6.forEach(function(n){out.push({name:n,sem:6,kind:"elect"});});
+    return out;
+  }
+
+  /* ---------- weekly schedule: what's on now, what's next ----------
+     Entries: {day: 1(Mon)–7(Sun), start "HH:MM", end "HH:MM", name, room}.
+     Pure clock math on local data, so it works with no connection at all. */
+  function toMin(s){
+    var m=/^(\d{1,2}):(\d{2})$/.exec(String(s||"").trim());
+    return m?(+m[1])*60+(+m[2]):null;
+  }
+  function schedNow(schedule,now){
+    var mins=now.getHours()*60+now.getMinutes();
+    var today=((now.getDay()+6)%7)+1;   /* Mon=1 */
+    var cur=null,next=null,best=Infinity;
+    (schedule||[]).forEach(function(en){
+      var s=toMin(en.start);if(s==null)return;
+      var e=toMin(en.end);if(e==null)e=s+90;
+      if(en.day===today&&s<=mins&&mins<e)cur={entry:en,endsIn:e-mins};
+      var delta=((en.day-today+7)%7)*1440+(s-mins);
+      if(delta<=0)delta+=7*1440;
+      if(delta<best){best=delta;next={entry:en,inMin:delta};}
+    });
+    return {current:cur,next:next};
+  }
 
   function pad2(n){return (n<10?"0":"")+n;}
   function n2(x){return (Math.round(x*100)/100).toFixed(2);}
@@ -117,6 +178,42 @@
     });
   }
 
+  /* ECTS-weighted average: weighted base + each passing grade × its credits.
+     Exams without an ECTS value count as 5 (the typical UBT course). */
+  function weightedAvg(profile,pool,results){
+    var be=+profile.baseEcts||0;
+    if(!be)return null;
+    var sum=(+profile.baseAvgW||profile.baseAvg)*be,w=be;
+    var byId=poolIndex(pool);
+    Object.keys(results||{}).forEach(function(k){
+      var r=results[k];if(!isPassed(r))return;
+      var ex=byId[k];if(!ex)return;
+      var e=+ex.ects||5;
+      sum+=r.grade*e;w+=e;
+    });
+    return w?sum/w:null;
+  }
+
+  /* running average after each passing grade, in exam-date order —
+     the data behind the trend sparkline */
+  function trendPoints(profile,pool,results,sessions){
+    var byId=poolIndex(pool),sessIdx={};
+    (sessions||[]).forEach(function(s){sessIdx[s.id]=s;});
+    var items=[];
+    Object.keys(results||{}).forEach(function(k){
+      var r=results[k];if(!isPassed(r))return;
+      var ex=byId[k];if(!ex)return;
+      var d=parseDMY(ex.date),s=sessIdx[r.sessionId];
+      items.push({t:d?d.getTime():(s?new Date(s.year,s.month,0).getTime():0),
+        g:r.grade,name:ex.name});
+    });
+    items.sort(function(a,b){return a.t-b.t;});
+    var sum=profile.baseCount*profile.baseAvg,n=profile.baseCount;
+    var pts=[{avg:n?sum/n:0,name:null,g:null}];
+    items.forEach(function(it){sum+=it.g;n++;pts.push({avg:sum/n,name:it.name,g:it.g});});
+    return pts;
+  }
+
   /* months a session's dated exams span, for the calendar */
   function monthsSpanned(sn,byId){
     var map={},keys=[];
@@ -179,7 +276,8 @@
   /* ---------- seed & shape ---------- */
   function seedData(){
     return {
-      profile:{name:"Giorno",baseCount:12,baseAvg:8.75,targetMin:8.5,targetMax:9.0,totalCourses:24},
+      profile:{name:"Giorno",baseCount:12,baseAvg:8.75,targetMin:8.5,targetMax:9.0,totalCourses:24,
+               baseEcts:61,baseAvgW:8.8,uniEmail:"",uniId:"",year:3,spec:""},
       pool:[
         {id:"os",       name:"Sistemet Operative",                    sem:2,date:"10.09.2026"},
         {id:"diskrete2",name:"Struktura Diskrete 2",                  sem:4,date:"11.09.2026"},
@@ -205,7 +303,7 @@
         {id:"s-2027-9",label:"September 2027",year:2027,month:9,entries:[]},
         {id:"s-2027-11",label:"November 2027",year:2027,month:11,entries:[]}
       ],
-      results:{},prep:{},v:2
+      results:{},prep:{},schedule:[],v:2
     };
   }
   /* sessions added in later versions, folded into older stored data once */
@@ -220,13 +318,23 @@
     if(!d||typeof d!=="object")return seedData();
     d.profile=d.profile||{};
     var p=d.profile,s=seedData().profile;
-    ["name"].forEach(function(k){if(typeof p[k]!=="string")p[k]=p[k]!=null?String(p[k]):s[k];});
-    ["baseCount","baseAvg","targetMin","targetMax","totalCourses"].forEach(function(k){
+    ["name","uniEmail","uniId","spec"].forEach(function(k){
+      if(typeof p[k]!=="string")p[k]=p[k]!=null?String(p[k]):(s[k]||"");});
+    if(!SPECS[p.spec])p.spec="";
+    ["baseCount","baseAvg","targetMin","targetMax","totalCourses","baseEcts","baseAvgW","year"].forEach(function(k){
       p[k]=isFinite(+p[k])?+p[k]:s[k];});
+    d.schedule=(d.schedule||[]).filter(function(en){
+      return en&&en.name&&toMin(en.start)!=null&&+en.day>=1&&+en.day<=7;});
+    d.schedule.forEach(function(en){
+      en.day=+en.day;en.start=String(en.start);en.end=en.end?String(en.end):"";
+      en.name=String(en.name);en.room=en.room?String(en.room):"";});
     if(p.targetMax<p.targetMin){var t=p.targetMin;p.targetMin=p.targetMax;p.targetMax=t;}
     if(p.totalCourses<p.baseCount)p.totalCourses=p.baseCount;
     d.pool=(d.pool||[]).filter(function(e){return e&&e.id&&e.name;});
-    d.pool.forEach(function(e){e.sem=e.sem!=null&&e.sem!==""?+e.sem||"":"";e.date=e.date||"";});
+    d.pool.forEach(function(e){
+      e.sem=e.sem!=null&&e.sem!==""?+e.sem||"":"";
+      e.ects=e.ects!=null&&e.ects!==""?+e.ects||"":"";
+      e.date=e.date||"";});
     var byId=poolIndex(d.pool);
     d.sessions=(d.sessions||[]).filter(function(sn){return sn&&sn.id;});
     if(!d.sessions.length)d.sessions=seedData().sessions.map(function(sn){
@@ -305,6 +413,8 @@
     isPassed:isPassed,isFailed:isFailed,attempts:attempts,nthTry:nthTry,
     unfinished:unfinished,running:running,
     targetRows:targetRows,reckonerRows:reckonerRows,monthsSpanned:monthsSpanned,
+    weightedAvg:weightedAvg,trendPoints:trendPoints,
+    SPECS:SPECS,COMMON:COMMON,curriculum:curriculum,schedNow:schedNow,toMin:toMin,
     buildICS:buildICS,seedData:seedData,normalise:normalise,importAny:importAny};
   root.TrackerCore=CORE;
 
@@ -388,6 +498,26 @@
     savesMem:"Session only — use Export to keep your data",
     navOverview:"Overview",navExams:"Exams",navCal:"Calendar",navStats:"Insights",navSet:"Set up",
     icsSummary:"Exam: ",
+    knW:"ECTS-weighted average <b>{x}</b>",
+    trendH:"Average over time",
+    lblEcts:"ECTS completed",lblAvgW:"Weighted average (optional)",ectsPh:"ECTS",
+    shareB:"📤 Share backup",startPoint:"start",
+    lblUniEmail:"Uni email",lblUniId:"Student ID",lblYear:"Year of studies",lblSpec:"Specialization",
+    phUniEmail:"name.surname@ubt-uni.net",phUniId:"e.g. 22-123-456",
+    specNone:"— not chosen yet",yearOpt:"Year {n}",
+    specPanelH:"Year-3 curriculum — {s}",
+    specPanelSub:"Tick what you'll take and add it straight to your exam pool. Electives: pick 1 of the 2 per semester.",
+    addSel:"Add selected to exam pool",inPool:"already in the pool",
+    kOblig:"obligatory",kSpec:"specialization",kElect:"elective — 1 of 2",
+    navSched:"Schedule",schedH:"University schedule",
+    schedHint:"works offline — it always knows where you are in the week",
+    nowPill:"Now",nextPill:"Next",
+    endsIn:"ends in {x}",inX:"in {x}",noClassNow:"No class right now",
+    noSched:"No schedule yet — add your classes once the timetable is out, and this tab will always show where you should be.",
+    addSchedCta:"Add your classes",
+    editSched:"Edit schedule — day, time, subject, room",
+    addClass:"+ Add class",saveSched:"Save schedule",
+    phSubject:"Subject",phRoom:"room (optional)",
     footNotes:"Averages assume a simple (unweighted) mean of passed course grades, matching how UBT displays the transcript average — failed sittings don't enter it, the course simply stays in your pool. Exam dates come from the official “Orari i Provimeve — Shtator 2026”; which Dukagjini time window applies depends on the professor, so always confirm your section and campus before each exam. Use Export to back up or move your data between devices."
   },
   sq:{
@@ -458,6 +588,26 @@
     savesMem:"Vetëm për këtë sesion — përdor Eksporto për t'i ruajtur të dhënat",
     navOverview:"Kryesore",navExams:"Provimet",navCal:"Kalendari",navStats:"Analiza",navSet:"Cilësimet",
     icsSummary:"Provim: ",
+    knW:"Mesatarja me peshë ECTS <b>{x}</b>",
+    trendH:"Mesatarja në kohë",
+    lblEcts:"ECTS të përfunduara",lblAvgW:"Mesatarja me peshë (ops.)",ectsPh:"ECTS",
+    shareB:"📤 Ndaje kopjen",startPoint:"fillimi",
+    lblUniEmail:"Email-i i UBT-së",lblUniId:"ID e studentit",lblYear:"Viti i studimeve",lblSpec:"Specializimi",
+    phUniEmail:"emri.mbiemri@ubt-uni.net",phUniId:"p.sh. 22-123-456",
+    specNone:"— ende pa zgjedhur",yearOpt:"Viti {n}",
+    specPanelH:"Plani i vitit 3 — {s}",
+    specPanelSub:"Zgjidh çka do të ndjekësh dhe shtoje direkt në listën e provimeve. Zgjedhoret: 1 nga 2 për semestër.",
+    addSel:"Shto të zgjedhurat në listën e provimeve",inPool:"tashmë në listë",
+    kOblig:"obligative",kSpec:"specializim",kElect:"zgjedhore — 1 nga 2",
+    navSched:"Orari",schedH:"Orari i universitetit",
+    schedHint:"punon pa internet — e di gjithmonë ku je gjatë javës",
+    nowPill:"Tani",nextPill:"Pas",
+    endsIn:"mbaron pas {x}",inX:"pas {x}",noClassNow:"S'ka orë tani",
+    noSched:"Ende pa orar — shtoji orët kur të dalë orari, dhe kjo pjesë ta tregon gjithmonë ku duhet të jesh.",
+    addSchedCta:"Shto orët e tua",
+    editSched:"Ndrysho orarin — dita, ora, lënda, salla",
+    addClass:"+ Shto orë",saveSched:"Ruaj orarin",
+    phSubject:"Lënda",phRoom:"salla (ops.)",
     footNotes:"Mesataret llogariten si mesatare e thjeshtë (pa peshë) e notave kaluese, ashtu si e shfaq UBT-ja në transkriptë — provimet e dështuara nuk hyjnë fare, lënda thjesht mbetet në listë. Datat e provimeve vijnë nga “Orari i Provimeve — Shtator 2026” zyrtar; cili orar i Dukagjinit vlen varet nga profesori, prandaj gjithmonë konfirmoje seksionin dhe kampusin para çdo provimi. Përdor Eksporto për ta ruajtur ose bartur progresin mes pajisjeve."
   }};
   var LANG="en";
@@ -473,6 +623,7 @@
     LOC.MON=LANG==="sq"?MON_SQ:MON;
     LOC.DOW=LANG==="sq"?DOW_SQ:DOW;
     LOC.MON_FULL=LANG==="sq"?MON_FULL_SQ:MON_FULL;
+    LOC.DAYS=LANG==="sq"?DAYS_SQ:DAYS;
     document.documentElement.lang=LANG;
     try{localStorage.setItem("ubt-lang",LANG);}catch(e){}
     var lb=document.getElementById("langBtn");
@@ -620,7 +771,8 @@
     Array.prototype.forEach.call(document.querySelectorAll("details[data-keep]"),function(el){
       open[el.id]=el.open;});
     buildHeader();buildYearBar();buildSessBar();buildExamsHead();buildPicker();buildCards();
-    buildCalendar();buildCleared();buildTables();buildSetup();render();
+    buildCalendar();buildCleared();buildTables();buildSetup();render();buildTrend();
+    renderNow();buildSchedList();fillSchedEditor();
     Object.keys(open).forEach(function(id){
       var el=document.getElementById(id);if(el)el.open=open[id];});
     var wb=document.getElementById("whatifBtn");
@@ -634,7 +786,8 @@
     var left=unfinished(DATA.pool,R()).length;
     var passed=DATA.pool.length-left;
     document.getElementById("hLede").textContent=
-      p.baseCount+" "+t("coursesDone")+" · "+(passed?passed+" "+t("passedHere")+" · ":"")
+      (SPECS[p.spec]?SPECS[p.spec].sq+" · ":"")
+      +p.baseCount+" "+t("coursesDone")+" · "+(passed?passed+" "+t("passedHere")+" · ":"")
       +left+" "+t("leftIn")+" · "+t("aiming")+" "+nice(p.targetMin)+"–"+nice(p.targetMax);
     document.getElementById("stBase").textContent=n2(p.baseAvg);
     document.getElementById("stTarget").textContent=nice(p.targetMin)+"–"+nice(p.targetMax);
@@ -875,8 +1028,8 @@
     var sn=cur(),cal=document.getElementById("cal");cal.innerHTML="";
     var months=monthsSpanned(sn,byId());
     document.getElementById("calSection").hidden=!months.length;
-    var navCal=document.getElementById("navCal");
-    if(navCal)navCal.style.display=months.length?"":"none";
+    Array.prototype.forEach.call(document.querySelectorAll('[data-nav="calSection"]'),
+      function(a){a.style.display=months.length?"":"none";});
     document.getElementById("calHead").textContent=sn.label;
     if(!months.length)return;
 
@@ -914,6 +1067,47 @@
     var words=n.split(" ").filter(Boolean);
     return words.length>=2?(words[0]+" "+words[words.length-1]).slice(0,16):n.slice(0,14)+"…";
   }
+
+  /* ---------- trend sparkline ---------- */
+  function buildTrend(){
+    var card=document.getElementById("trendCard");
+    var pts=trendPoints(DATA.profile,DATA.pool,R(),DATA.sessions);
+    if(pts.length<2){card.hidden=true;return;}
+    card.hidden=false;
+    var svg=document.getElementById("trendSvg");
+    var W=Math.max(svg.clientWidth||card.clientWidth-36,280),H=64,PAD=9,PL=8,PR=8;
+    var base=DATA.profile.baseAvg;
+    var vals=pts.map(function(p){return p.avg;}).concat([base]);
+    var lo=Math.min.apply(null,vals)-0.04,hi=Math.max.apply(null,vals)+0.04;
+    if(hi-lo<0.16){var mid=(hi+lo)/2;lo=mid-0.08;hi=mid+0.08;}
+    function X(i){return PL+(W-PL-PR)*(i/(pts.length-1));}
+    function Y(v){return PAD+(H-2*PAD)*(1-(v-lo)/(hi-lo));}
+    var line=pts.map(function(p,i){
+      return (i?"L":"M")+X(i).toFixed(1)+" "+Y(p.avg).toFixed(1);}).join("");
+    var out='<line x1="0" x2="'+W+'" y1="'+Y(base).toFixed(1)+'" y2="'+Y(base).toFixed(1)
+      +'" stroke="var(--faint)" stroke-dasharray="3 4" stroke-width="1" opacity=".7"/>';
+    out+='<path d="'+line+'" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>';
+    pts.forEach(function(p,i){
+      var col=p.avg>base+1e-9?"var(--good)":p.avg<base-1e-9?"var(--bad)":"var(--accent)";
+      out+='<circle cx="'+X(i).toFixed(1)+'" cy="'+Y(p.avg).toFixed(1)+'" r="'+(i===pts.length-1?4:3)
+        +'" fill="'+col+'" stroke="var(--surface)" stroke-width="2"/>';
+    });
+    /* larger invisible hit targets carry the tooltips */
+    pts.forEach(function(p,i){
+      out+='<circle cx="'+X(i).toFixed(1)+'" cy="'+Y(p.avg).toFixed(1)
+        +'" r="11" fill="transparent"><title>'
+        +esc((p.name?p.name+" · "+p.g+" → ":t("startPoint")+" ")+n2(p.avg))
+        +'</title></circle>';
+    });
+    svg.setAttribute("viewBox","0 0 "+W+" "+H);
+    svg.setAttribute("height",H);
+    svg.innerHTML=out;
+    document.getElementById("trendDelta").textContent=
+      n2(pts[0].avg)+" → "+n2(pts[pts.length-1].avg);
+  }
+  var trendRsz;
+  window.addEventListener("resize",function(){
+    clearTimeout(trendRsz);trendRsz=setTimeout(buildTrend,150);});
 
   /* ---------- cleared history ---------- */
   function buildCleared(){
@@ -1019,10 +1213,12 @@
       var r=R()[it.ex.id];return !r||r.grade==null;}).length;
     var all9=pend?(run.sum+9*pend)/(run.count+pend):run.avg;
     var tt=targetRows(p);
+    var wAvg=weightedAvg(p,DATA.pool,R());
     document.getElementById("keynums").innerHTML=
       '<span>'+t("kn1",{x:n2(base)})+'</span>'
       +'<span>'+t("kn2",{x:n2(tt.ceil)})+'</span>'
-      +(pend?'<span>'+t("kn3",{n:pend,x:n2(all9)})+'</span>':"");
+      +(pend?'<span>'+t("kn3",{n:pend,x:n2(all9)})+'</span>':"")
+      +(wAvg!=null?'<span>'+t("knW",{x:n2(wAvg)})+'</span>':"");
 
     list.forEach(function(item){
       var ex=item.ex,r=R()[ex.id];
@@ -1098,18 +1294,83 @@
     document.getElementById("setTmin").value=p.targetMin;
     document.getElementById("setTmax").value=p.targetMax;
     document.getElementById("setTotal").value=p.totalCourses;
+    document.getElementById("setEcts").value=p.baseEcts||"";
+    document.getElementById("setAvgW").value=p.baseAvgW||"";
+    document.getElementById("setUniEmail").value=p.uniEmail||"";
+    document.getElementById("setUniId").value=p.uniId||"";
+    var ys=document.getElementById("setYear");ys.innerHTML="";
+    [1,2,3].forEach(function(y){
+      var o=document.createElement("option");o.value=y;o.textContent=t("yearOpt",{n:y});
+      if((p.year||3)===y)o.selected=true;ys.appendChild(o);});
+    var ss=document.getElementById("setSpec");ss.innerHTML="";
+    var o0=document.createElement("option");o0.value="";o0.textContent=t("specNone");ss.appendChild(o0);
+    Object.keys(SPECS).forEach(function(k){
+      var o=document.createElement("option");o.value=k;
+      o.textContent=SPECS[k].sq+" · "+SPECS[k].en;
+      if(p.spec===k)o.selected=true;ss.appendChild(o);});
+    renderSpecPanel();
   }
+
+  /* year-3 curriculum picker: appears when a specialization + year 3 are set */
+  function renderSpecPanel(){
+    var panel=document.getElementById("specPanel");
+    var spec=document.getElementById("setSpec").value;
+    var year=+document.getElementById("setYear").value||0;
+    if(!spec||year<3||!SPECS[spec]){panel.hidden=true;panel.innerHTML="";return;}
+    panel.hidden=false;panel.innerHTML="";
+    var h=document.createElement("h4");
+    h.innerHTML=t("specPanelH",{s:esc(SPECS[spec].sq)});
+    var sub=document.createElement("p");sub.className="set-hint";sub.textContent=t("specPanelSub");
+    panel.appendChild(h);panel.appendChild(sub);
+    var inPool={};DATA.pool.forEach(function(e){inPool[e.name.trim().toLowerCase()]=true;});
+    var KIND={oblig:"kOblig",spec:"kSpec",elect:"kElect"};
+    var boxes=[];
+    curriculum(spec).forEach(function(it){
+      var had=!!inPool[it.name.trim().toLowerCase()];
+      var row=document.createElement("label");row.className="pick-row";
+      var inp=document.createElement("input");inp.type="checkbox";
+      inp.checked=had||it.kind!=="elect";inp.disabled=had;
+      var box=document.createElement("span");box.className="box";box.innerHTML=CHECK;
+      var body=document.createElement("span");body.className="pick-body";
+      body.innerHTML='<span class="pick-name">'+esc(it.name)+'</span>'
+        +'<span class="pick-meta"><span class="sem-badge">'+esc(t("exSem"))+' '+it.sem+'</span>'
+        +'<span class="pick-note">'+esc(t(KIND[it.kind]))+'</span>'
+        +(had?'<span class="pick-date">✓ '+esc(t("inPool"))+'</span>':"")+'</span>';
+      row.appendChild(inp);row.appendChild(box);row.appendChild(body);
+      panel.appendChild(row);
+      if(!had)boxes.push({inp:inp,it:it});
+    });
+    var act=document.createElement("div");act.className="set-actions";
+    var add=document.createElement("button");add.type="button";add.className="btn primary";
+    add.textContent=t("addSel");
+    add.addEventListener("click",function(){
+      boxes.forEach(function(b){
+        if(!b.inp.checked)return;
+        DATA.pool.push({
+          id:"c"+Date.now().toString(36)+Math.floor(Math.random()*1e4).toString(36),
+          name:b.it.name,sem:b.it.sem,ects:"",date:""});
+      });
+      /* the picker doubles as the spec/year form — keep those choices */
+      DATA.profile.spec=spec;DATA.profile.year=year;
+      save();buildAll();
+    });
+    act.appendChild(add);panel.appendChild(act);
+  }
+  document.getElementById("setSpec").addEventListener("change",renderSpecPanel);
+  document.getElementById("setYear").addEventListener("change",renderSpecPanel);
   function poolRow(ex){
     var row=document.createElement("div");row.className="exam-row";
     row.dataset.id=ex?ex.id:("x"+Date.now().toString(36)+Math.floor(Math.random()*1e4).toString(36));
     var n=document.createElement("input");n.className="f-name";n.placeholder=t("exName");n.value=ex?ex.name:"";
     var sm=document.createElement("input");sm.className="f-sem";sm.type="number";sm.min=1;sm.max=8;
     sm.placeholder=t("exSem");if(ex&&ex.sem)sm.value=ex.sem;
+    var ec=document.createElement("input");ec.className="f-sem";ec.type="number";ec.min=1;ec.max=30;
+    ec.placeholder=t("ectsPh");if(ex&&ex.ects)ec.value=ex.ects;
     var dt=document.createElement("input");dt.className="f-date";dt.placeholder="dd.mm.yyyy";
     dt.value=ex&&ex.date?ex.date:"";
     var x=document.createElement("button");x.type="button";x.textContent="✕";x.title=t("removeExam");
     x.addEventListener("click",function(){row.remove();});
-    row.appendChild(n);row.appendChild(sm);row.appendChild(dt);row.appendChild(x);
+    row.appendChild(n);row.appendChild(sm);row.appendChild(ec);row.appendChild(dt);row.appendChild(x);
     return row;
   }
   document.getElementById("addPool").addEventListener("click",function(){
@@ -1117,10 +1378,12 @@
   document.getElementById("savePool").addEventListener("click",function(){
     var next=[];
     Array.prototype.forEach.call(document.querySelectorAll("#poolRows .exam-row"),function(row){
-      var ins=row.querySelectorAll("input");   /* name, sem, date */
+      var ins=row.querySelectorAll("input");   /* name, sem, ects, date */
       var name=ins[0].value.trim();if(!name)return;
       next.push({id:row.dataset.id,name:name,
-        sem:ins[1].value?+ins[1].value:"",date:ins[2].value.trim()});
+        sem:ins[1].value?+ins[1].value:"",
+        ects:ins[2].value?+ins[2].value:"",
+        date:ins[3].value.trim()});
     });
     var keep={};next.forEach(function(e){keep[e.id]=true;});
     /* removing an exam removes its session entries, result and prep */
@@ -1180,6 +1443,134 @@
     if(p.targetMax<p.targetMin){var t2=p.targetMin;p.targetMin=p.targetMax;p.targetMax=t2;}
     p.totalCourses=Math.max(p.baseCount,
       parseInt(document.getElementById("setTotal").value,10)||p.baseCount);
+    p.baseEcts=Math.max(0,parseFloat(document.getElementById("setEcts").value)||0);
+    p.baseAvgW=parseFloat(document.getElementById("setAvgW").value)||0;
+    p.uniEmail=document.getElementById("setUniEmail").value.trim();
+    p.uniId=document.getElementById("setUniId").value.trim();
+    p.year=+document.getElementById("setYear").value||3;
+    p.spec=document.getElementById("setSpec").value;
+    save();buildAll();
+  });
+
+  /* ---------- university schedule (fully offline) ---------- */
+  function fmtDur(min){
+    if(min<60)return min+" min";
+    var h=Math.floor(min/60),m=min%60;
+    return h+"h"+(m?" "+m+"m":"");
+  }
+  function renderNow(){
+    var card=document.getElementById("nowCard");
+    var sched=DATA.schedule||[];
+    if(!sched.length){
+      card.innerHTML='<div class="now-empty"><div class="emoji">🕰️</div><p>'+esc(t("noSched"))+'</p></div>';
+      var b=document.createElement("button");b.type="button";b.className="btn primary";
+      b.textContent=t("addSchedCta");
+      b.addEventListener("click",function(){
+        var d=document.getElementById("schedBox");d.open=true;
+        d.scrollIntoView({behavior:"smooth",block:"center"});});
+      card.querySelector(".now-empty").appendChild(b);
+      return;
+    }
+    var r=schedNow(sched,new Date());
+    var html="";
+    if(r.current){
+      var ce=r.current.entry;
+      html+='<div class="now-block live"><span class="now-pill on">'+esc(t("nowPill"))+'</span>'
+        +'<div class="now-main"><div class="now-name">'+esc(ce.name)+'</div>'
+        +'<div class="now-sub">'+esc(ce.start+"–"+(ce.end||"?"))
+        +(ce.room?" · "+esc(ce.room):"")
+        +' · '+esc(t("endsIn",{x:fmtDur(r.current.endsIn)}))+'</div></div></div>';
+    }else{
+      html+='<div class="now-block idle"><span class="now-pill">'+esc(t("nowPill"))+'</span>'
+        +'<div class="now-main"><div class="now-name idle-name">'+esc(t("noClassNow"))+'</div></div></div>';
+    }
+    if(r.next){
+      var ne=r.next.entry;
+      var when=r.next.inMin<1440?t("inX",{x:fmtDur(r.next.inMin)})
+        :LOC.DAYS[ne.day-1]+" · "+ne.start;
+      html+='<div class="now-block next"><span class="now-pill nx">'+esc(t("nextPill"))+'</span>'
+        +'<div class="now-main"><div class="now-name">'+esc(ne.name)+'</div>'
+        +'<div class="now-sub">'+esc(ne.start+"–"+(ne.end||"?"))
+        +(ne.room?" · "+esc(ne.room):"")+' · '+esc(when)+'</div></div></div>';
+    }
+    card.innerHTML=html;
+  }
+  function buildSchedList(){
+    var wrap=document.getElementById("schedList");
+    var sched=(DATA.schedule||[]).slice().sort(function(a,b){
+      return (a.day-b.day)||((toMin(a.start)||0)-(toMin(b.start)||0));});
+    wrap.hidden=!sched.length;
+    wrap.innerHTML="";
+    if(!sched.length)return;
+    var now=new Date(),today=((now.getDay()+6)%7)+1;
+    var r=schedNow(sched,now);
+    for(var d=1;d<=7;d++){
+      /* eslint-disable no-loop-func */
+      var items=sched.filter(function(en){return en.day===d;});
+      if(!items.length)continue;
+      var day=document.createElement("div");
+      day.className="sched-day"+(d===today?" is-today":"");
+      day.innerHTML='<div class="sd-h">'+esc(LOC.DAYS[d-1])
+        +(d===today?'<span class="today-pill">'+esc(t("today"))+'</span>':"")+'</div>';
+      items.forEach(function(en){
+        var live=!!(r.current&&r.current.entry===en);
+        var row=document.createElement("div");row.className="sd-row"+(live?" live":"");
+        row.innerHTML='<span class="sd-time">'+esc(en.start+"–"+(en.end||"?"))+'</span>'
+          +'<span class="sd-name">'+esc(en.name)+'</span>'
+          +(en.room?'<span class="sd-room">'+esc(en.room)+'</span>':"")
+          +(live?'<span class="live-dot"></span>':"");
+        day.appendChild(row);
+      });
+      wrap.appendChild(day);
+    }
+  }
+  /* keep "now / next" honest while the app sits open */
+  setInterval(function(){
+    if(!document.hidden){renderNow();buildSchedList();}
+  },30000);
+  document.addEventListener("visibilitychange",function(){
+    if(!document.hidden){renderNow();buildSchedList();}
+  });
+
+  function schedRow(en){
+    var row=document.createElement("div");row.className="exam-row";
+    var day=document.createElement("select");day.className="mon f-day7";
+    LOC.DAYS.forEach(function(nm,i){
+      var o=document.createElement("option");o.value=i+1;o.textContent=nm;
+      if(en&&en.day===i+1)o.selected=true;day.appendChild(o);});
+    var st=document.createElement("input");st.type="time";st.className="f-time";
+    if(en&&en.start)st.value=en.start;
+    var et=document.createElement("input");et.type="time";et.className="f-time";
+    if(en&&en.end)et.value=en.end;
+    var nm2=document.createElement("input");nm2.className="f-name";
+    nm2.placeholder=t("phSubject");if(en)nm2.value=en.name;
+    var rm=document.createElement("input");rm.className="f-note";
+    rm.placeholder=t("phRoom");if(en&&en.room)rm.value=en.room;
+    var x=document.createElement("button");x.type="button";x.textContent="✕";
+    x.addEventListener("click",function(){row.remove();});
+    row.appendChild(day);row.appendChild(st);row.appendChild(et);
+    row.appendChild(nm2);row.appendChild(rm);row.appendChild(x);
+    return row;
+  }
+  function fillSchedEditor(){
+    var box=document.getElementById("schedRows");box.innerHTML="";
+    (DATA.schedule||[]).slice().sort(function(a,b){
+      return (a.day-b.day)||((toMin(a.start)||0)-(toMin(b.start)||0));
+    }).forEach(function(en){box.appendChild(schedRow(en));});
+  }
+  document.getElementById("addSched").addEventListener("click",function(){
+    document.getElementById("schedRows").appendChild(schedRow(null));});
+  document.getElementById("saveSched").addEventListener("click",function(){
+    var next=[];
+    Array.prototype.forEach.call(document.querySelectorAll("#schedRows .exam-row"),function(row){
+      var day=+row.querySelector("select").value||1;
+      var ins=row.querySelectorAll("input");   /* start, end, name, room */
+      var name=ins[2].value.trim();
+      if(!name||!ins[0].value)return;
+      next.push({day:day,start:ins[0].value,end:ins[1].value||"",
+        name:name,room:ins[3].value.trim()});
+    });
+    DATA.schedule=next;
     save();buildAll();
   });
 
@@ -1216,6 +1607,24 @@
       JSON.stringify({app:"ubt-exam-tracker",version:3,data:DATA},null,2),
       "application/json");
   });
+  /* share the backup file via the OS share sheet where supported (mobile) */
+  (function(){
+    var btn=document.getElementById("shareBtn");
+    var can=false;
+    try{
+      can=!!(navigator.canShare&&navigator.canShare(
+        {files:[new File(["x"],"x.json",{type:"application/json"})]}));
+    }catch(e){}
+    if(!can)return;
+    btn.hidden=false;
+    btn.addEventListener("click",function(){
+      var f=new File(
+        [JSON.stringify({app:"ubt-exam-tracker",version:3,data:DATA},null,2)],
+        "exam-tracker-"+slug(DATA.profile.name)+".json",
+        {type:"application/json"});
+      navigator.share({files:[f],title:"Exam tracker backup"}).catch(function(){});
+    });
+  })();
   document.getElementById("importBtn").addEventListener("click",function(){
     document.getElementById("importFile").click();});
   document.getElementById("importFile").addEventListener("change",function(ev){
@@ -1260,17 +1669,16 @@
     setSaveState();buildAll();
   });
 
-  /* ---------- bottom nav scrollspy ---------- */
-  var SPY=[["navHome","top"],["navExams","examsSection"],["navCal","calSection"],
-           ["navStats","gpaSection"],["navSet","setupSection"]];
+  /* ---------- nav scrollspy (bottom tabs + desktop sidebar) ---------- */
+  var SPY_SECTIONS=["top","examsSection","calSection","schedSection","gpaSection","setupSection"];
   var spyQueued=false;
   function runSpy(){
     spyQueued=false;
     var y=window.scrollY+150,curId="top";
-    SPY.forEach(function(s){var el=document.getElementById(s[1]);
-      if(el&&!el.hidden&&el.offsetTop<=y)curId=s[1];});
-    SPY.forEach(function(s){var a=document.getElementById(s[0]);
-      if(a)a.classList.toggle("on",s[1]===curId);});
+    SPY_SECTIONS.forEach(function(id){var el=document.getElementById(id);
+      if(el&&!el.hidden&&el.offsetTop<=y)curId=id;});
+    Array.prototype.forEach.call(document.querySelectorAll("[data-nav]"),function(a){
+      a.classList.toggle("on",a.dataset.nav===curId);});
   }
   window.addEventListener("scroll",function(){
     if(!spyQueued){spyQueued=true;requestAnimationFrame(runSpy);}
