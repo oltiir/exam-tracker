@@ -58,6 +58,11 @@
 
   function isPassed(res){return !!(res&&res.grade!=null&&res.grade>=6);}
   function isFailed(res){return !!(res&&res.grade!=null&&res.grade<6);}
+  /* total failed sittings: frozen past fails + the current grade if it's a fail */
+  function attempts(res){
+    return (res?(+res.fails||0):0)+(isFailed(res)?1:0);
+  }
+  function nthTry(n){return n===1?"1st":n===2?"2nd":n===3?"3rd":n+"th";}
   /* pool exams not yet passed — these are what session pickers offer */
   function unfinished(pool,results){
     return (pool||[]).filter(function(e){return !isPassed(results[e.id]);});
@@ -142,12 +147,23 @@
         {id:"s-2026-9",label:"September 2026",year:2026,month:9,entries:
           ["diskrete2","bigdata","algoritme","shkenca2","hyrjealg","db"].map(function(id){
             return {examId:id,slot:"13:00–14:30"};})},
+        {id:"s-2026-11",label:"November 2026",year:2026,month:11,entries:[]},
         {id:"s-2027-1",label:"January 2027",year:2027,month:1,entries:[]},
-        {id:"s-2027-4",label:"April 2027",year:2027,month:4,entries:[]}
+        {id:"s-2027-4",label:"April 2027",year:2027,month:4,entries:[]},
+        {id:"s-2027-6",label:"June–July 2027",year:2027,month:6,entries:[]},
+        {id:"s-2027-9",label:"September 2027",year:2027,month:9,entries:[]},
+        {id:"s-2027-11",label:"November 2027",year:2027,month:11,entries:[]}
       ],
-      results:{},prep:{}
+      results:{},prep:{},v:2
     };
   }
+  /* sessions added in later versions, folded into older stored data once */
+  var MIGRATE_SESSIONS=[
+    {id:"s-2026-11",label:"November 2026",year:2026,month:11},
+    {id:"s-2027-6", label:"June–July 2027",year:2027,month:6},
+    {id:"s-2027-9", label:"September 2027",year:2027,month:9},
+    {id:"s-2027-11",label:"November 2027",year:2027,month:11}
+  ];
 
   function normalise(d){
     if(!d||typeof d!=="object")return seedData();
@@ -173,11 +189,21 @@
         if(!en||!byId[en.examId]||seenE[en.examId])return false;
         seenE[en.examId]=true;en.slot=en.slot||"";return true;});
     });
+    /* one-time additive migration: fold in sitting periods introduced later,
+       matched by year+month so renamed/imported sessions don't duplicate */
+    if((+d.v||1)<2){
+      MIGRATE_SESSIONS.forEach(function(def){
+        if(!d.sessions.some(function(sn){return sn.year===def.year&&sn.month===def.month;}))
+          d.sessions.push({id:def.id,label:def.label,year:def.year,month:def.month,entries:[]});
+      });
+    }
+    d.v=2;
     d.results=d.results||{};d.prep=d.prep||{};
     Object.keys(d.results).forEach(function(k){
       var r=d.results[k];
-      if(!byId[k]||!r||(r.grade==null&&!r.sat)){delete d.results[k];return;}
+      if(!byId[k]||!r||(r.grade==null&&!r.sat&&!(+r.fails>0))){delete d.results[k];return;}
       if(r.grade!=null)r.grade=+r.grade;
+      r.fails=+r.fails||0;
     });
     Object.keys(d.prep).forEach(function(k){if(!byId[k])delete d.prep[k];});
     return d;
@@ -225,7 +251,8 @@
   var CORE={MON:MON,MON_FULL:MON_FULL,DOW:DOW,SLOTS:SLOTS,
     n2:n2,esc:esc,pad2:pad2,parseDMY:parseDMY,dayLabel:dayLabel,fullDate:fullDate,
     poolIndex:poolIndex,sessionEnd:sessionEnd,sortSessions:sortSessions,autoSelect:autoSelect,
-    isPassed:isPassed,isFailed:isFailed,unfinished:unfinished,running:running,
+    isPassed:isPassed,isFailed:isFailed,attempts:attempts,nthTry:nthTry,
+    unfinished:unfinished,running:running,
     targetRows:targetRows,reckonerRows:reckonerRows,monthsSpanned:monthsSpanned,
     seedData:seedData,normalise:normalise,importAny:importAny};
   root.TrackerCore=CORE;
@@ -303,6 +330,26 @@
     if(!DATA.prep[id])DATA.prep[id]={notes:false,papers:false,mock:false};
     return DATA.prep[id];
   }
+  function sessById(id){
+    for(var i=0;i<DATA.sessions.length;i++)
+      if(DATA.sessions[i].id===id)return DATA.sessions[i];
+    return null;
+  }
+  /* start a result for (exam, session), carrying history forward: a fail
+     logged in ANOTHER session gets frozen into the fails counter */
+  function freshResult(ex,sn){
+    var r=DATA.results[ex.id];
+    var fails=r?(+r.fails||0):0,grade=null,sat=false;
+    if(r){
+      if(r.sessionId===sn.id){grade=r.grade;sat=!!r.sat;}
+      else if(isFailed(r))fails++;
+    }
+    return {grade:grade,sessionId:sn.id,sat:sat,fails:fails};
+  }
+  function setResult(id,r){
+    if(r.grade==null&&!r.sat&&!r.fails)delete DATA.results[id];
+    else DATA.results[id]=r;
+  }
 
   /* ---------- build everything (cheap — the app is small) ---------- */
   function buildAll(){
@@ -375,7 +422,23 @@
     var sn=cur();
     document.getElementById("examHead").textContent="Your exams — "+sn.label;
     var ex=sessionExams(sn);
-    document.getElementById("stFirst").textContent=ex.length?dayLabel(ex[0].ex):"–";
+    /* countdown to the nearest upcoming ungraded exam in this session */
+    var today=new Date(NOW.getFullYear(),NOW.getMonth(),NOW.getDate());
+    var next=null;
+    ex.forEach(function(it){
+      if(next)return;
+      var d=parseDMY(it.ex.date),r=DATA.results[it.ex.id];
+      if(d&&d>=today&&!(r&&r.grade!=null))next={d:d,ex:it.ex};
+    });
+    var fv=document.getElementById("stFirst"),fl=document.getElementById("stFirstL");
+    if(next){
+      var days=Math.round((next.d-today)/864e5);
+      fv.textContent=dayLabel(next.ex);
+      fl.textContent="next exam · "+(days===0?"today":days===1?"tomorrow":"in "+days+"d");
+    }else{
+      fv.textContent=ex.length?dayLabel(ex[0].ex):"–";
+      fl.textContent="first exam";
+    }
     document.getElementById("stLast").textContent=ex.length?dayLabel(ex[ex.length-1].ex):"–";
     document.getElementById("progTotal").textContent=ex.length;
     var segs=document.getElementById("segs");segs.innerHTML="";
@@ -403,7 +466,8 @@
       var box2=document.createElement("span");box2.className="box";box2.innerHTML=CHECK;
       var body=document.createElement("span");body.className="pick-body";
       var other=otherSessionOf(ex.id);
-      var flags=(isFailed(DATA.results[ex.id])?'<span class="retake-badge">retake</span>':"")
+      var att=attempts(DATA.results[ex.id]);
+      var flags=(att>0?'<span class="retake-badge">retake'+(att>1?" ×"+att:"")+'</span>':"")
         +(other?'<span class="pick-note">also in '+esc(other.label)+'</span>':"");
       body.innerHTML='<span class="pick-name">'+esc(ex.name)+'</span>'
         +'<span class="pick-meta">'+(ex.sem?'<span class="sem-badge">sem '+esc(ex.sem)+'</span>':"")
@@ -471,8 +535,10 @@
       db.className="done-btn";db.id="done-"+ex.id;db.setAttribute("aria-pressed","false");
       db.addEventListener("click",function(){
         var r=DATA.results[ex.id];
-        if(r&&r.sat){r.sat=false;if(r.grade==null)delete DATA.results[ex.id];}
-        else DATA.results[ex.id]={grade:r?r.grade:null,sessionId:sn.id,sat:true};
+        var was=!!(r&&r.sessionId===sn.id&&r.sat);
+        var r2=freshResult(ex,sn);
+        r2.sat=!was;
+        setResult(ex.id,r2);
         save();buildAll();
       });
       head.appendChild(nm);head.appendChild(db);
@@ -498,8 +564,11 @@
         pb.title="Tap again to clear";
         pb.addEventListener("click",function(){
           var r=DATA.results[ex.id];
-          if(r&&r.grade===g){r.grade=null;if(!r.sat)delete DATA.results[ex.id];}
-          else DATA.results[ex.id]={grade:g,sessionId:sn.id,sat:true};
+          var same=!!(r&&r.sessionId===sn.id&&r.grade===g);
+          var r2=freshResult(ex,sn);
+          if(same)r2.grade=null;          /* tap again to clear (same session only) */
+          else{r2.grade=g;r2.sat=true;}
+          setResult(ex.id,r2);
           save();buildAll();
         });
         gp.appendChild(pb);
@@ -652,12 +721,14 @@
 
     list.forEach(function(item){
       var ex=item.ex,r=DATA.results[ex.id];
-      var g=r&&r.grade!=null?r.grade:null;
-      var isSat=!!(r&&(r.sat||g!=null));
+      var here=!!(r&&r.sessionId===sn.id);           /* result belongs to this session */
+      var g=here&&r.grade!=null?r.grade:null;        /* grades shown where they were earned */
+      var isSat=here&&(r.sat||g!=null);
+      var att=attempts(r);
       var card=document.getElementById("card-"+ex.id);
       if(card){
         card.classList.toggle("cleared",isPassed(r));
-        card.classList.toggle("failed",isFailed(r));
+        card.classList.toggle("failed",here&&isFailed(r));
       }
       var db=document.getElementById("done-"+ex.id);
       if(db){
@@ -666,7 +737,10 @@
         db.innerHTML=(isSat?CHECK_BTN:"")+"<span>"+(isSat?"Sat it":"Mark as sat")+"</span>";
       }
       var rt=document.getElementById("rt-"+ex.id);
-      if(rt)rt.hidden=!isFailed(r);
+      if(rt){
+        rt.hidden=!(att>0&&!isPassed(r));
+        rt.textContent="retake"+(att>1?" ×"+att:"");
+      }
       var gp=document.getElementById("gp-"+ex.id);
       if(gp)Array.prototype.forEach.call(gp.children,function(pb){
         pb.classList.toggle("sel",g!=null&&String(g)===pb.dataset.g);});
@@ -674,11 +748,20 @@
       if(cd)cd.classList.toggle("done",g!=null);
       var c=document.getElementById("contrib-"+ex.id);
       if(!c)return;
-      if(g==null){c.className="contrib none";c.textContent="no grade yet";}
-      else if(g<6){c.className="contrib down";c.textContent="✗ failed — stays in the pool for a retake";}
-      else if(g>base){c.className="contrib up";c.textContent="↑ lifts average";}
-      else if(g<base){c.className="contrib down";c.textContent="↓ dips average";}
-      else{c.className="contrib none";c.textContent="· holds level";}
+      var tryNote=(r&&(+r.fails||0)>0&&isPassed(r))?" · passed on the "+nthTry(r.fails+1)+" try":"";
+      if(isPassed(r)&&!here){
+        var where=sessById(r.sessionId);
+        c.className="contrib up";c.textContent="✓ already passed"+(where?" in "+where.label:"")+tryNote;
+      }
+      else if(g==null){
+        c.className="contrib none";
+        c.textContent=att>0?"no grade yet — attempt "+nthTry(att+1)+" coming up":"no grade yet";
+      }
+      else if(g<6){c.className="contrib down";
+        c.textContent="✗ failed"+(att>1?" ×"+att:"")+" — stays in the pool for a retake";}
+      else if(g>base){c.className="contrib up";c.textContent="↑ lifts average"+tryNote;}
+      else if(g<base){c.className="contrib down";c.textContent="↓ dips average"+tryNote;}
+      else{c.className="contrib none";c.textContent="· holds level"+tryNote;}
     });
   }
 

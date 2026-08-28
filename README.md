@@ -27,6 +27,7 @@ depends on how many courses you have already banked. This makes that visible
 | 🧺 **One exam pool** | Every course you still have to sit lives in a single master list — name, semester, official date. Enter it once. |
 | 🎯 **Sessions draw from it** | A session (September 2026, January 2027, …) is just a set of ticks against the pool. Change your mind by unticking — nothing is retyped. |
 | ✅ **Pass leaves the pool** | Grade 6+ removes the exam from every picker for good. A 5 keeps it in the pool flagged **retake**, ready to tick into a later session. |
+| 🔁 **Attempts are counted** | Every failed sitting is remembered — badges show *retake ×2*, cards show *attempt 3rd coming up*, and a pass records which try it took. Fails never touch the average. |
 | 🌊 **Waterline gauge** | Your starting average is the waterline. Log a grade and the bar moves — green above the line, red below. Failed sittings don't count against it. |
 | 📅 **Live calendars** | Built from the selected session's actual dates, one Monday-first grid per month spanned — an 01.10 exam inside the September session simply adds an October grid. |
 | 📊 **GPA tables** | Target bands (full precision, so the ceiling row is honest) and a ready-reckoner over the session's pending exams. |
@@ -44,7 +45,7 @@ The data model is deliberately small — one localStorage key holding:
   profile:  { name, baseCount, baseAvg, targetMin, targetMax, totalCourses },
   pool:     [ { id, name, sem, date } ],              // every exam still to sit
   sessions: [ { id, label, year, month, entries: [ { examId, slot } ] } ],
-  results:  { [examId]: { grade, sessionId, sat } },  // one result per exam
+  results:  { [examId]: { grade, sessionId, sat, fails } },  // one result per exam
   prep:     { [examId]: { notes, papers, mock } }
 }
 ```
@@ -81,8 +82,10 @@ account, no server and no analytics — nothing you type leaves the device, and
 nobody else opening the link sees any of it.
 
 The app ships pre-seeded with the 12 remaining courses from the official
-"Orari i Provimeve — Shtator 2026" and a September 2026 session already
-planned. Open **Set up** to edit the pool, the sessions or your details.
+"Orari i Provimeve — Shtator 2026", a September 2026 session already planned,
+and every sitting period through November 2027 (September/November 2026,
+January/April/June–July/September/November 2027). Open **Set up** to edit the
+pool, the sessions or your details.
 
 > [!IMPORTANT]
 > This is a public static site, so anything committed to `app.js` is
