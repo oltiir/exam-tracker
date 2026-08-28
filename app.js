@@ -227,6 +227,36 @@
     return keys.sort(function(a,b){return a-b;}).map(function(k){return map[k];});
   }
 
+  /* ---------- work due: homework, projects, labs ----------
+     Items: {id, title, type, subject, date "dd.mm.yyyy", time "HH:MM",
+     team, notes, done}. Undated items are allowed and sort last. */
+  var DUE_TYPES=["hw","project","lab","pres","other"];
+  function dueWhen(item){
+    var d=parseDMY(item.date);if(!d)return null;
+    var m=toMin(item.time);
+    return new Date(d.getFullYear(),d.getMonth(),d.getDate(),
+      m!=null?Math.floor(m/60):23,m!=null?m%60:59);
+  }
+  function dueSplit(due,now){
+    var open=[],done=[];
+    var mid=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+    (due||[]).forEach(function(it){
+      if(it.done){done.push(it);return;}
+      var w=dueWhen(it),days=null,over=false;
+      if(w){
+        days=Math.round((parseDMY(it.date)-mid)/864e5);
+        over=w<now;
+      }
+      open.push({item:it,when:w,days:days,overdue:over});
+    });
+    open.sort(function(a,b){
+      if(a.when&&b.when)return a.when-b.when;
+      if(a.when)return -1;if(b.when)return 1;
+      return String(a.item.title).localeCompare(String(b.item.title));
+    });
+    return {open:open,done:done};
+  }
+
   /* ---------- .ics calendar export ---------- */
   function icsEsc(s){
     return String(s).replace(/\\/g,"\\\\").replace(/;/g,"\\;").replace(/,/g,"\\,").replace(/\n/g,"\\n");
@@ -272,6 +302,40 @@
     lines.push("END:VCALENDAR");
     return lines.join("\r\n");
   }
+  /* open deadlines as calendar events, day-before alarm included */
+  function buildDueICS(due,prefix){
+    var lines=["BEGIN:VCALENDAR","VERSION:2.0",
+      "PRODID:-//ubt-exam-tracker//EN","CALSCALE:GREGORIAN"];
+    var now=new Date();
+    var stamp=now.getUTCFullYear()+pad2(now.getUTCMonth()+1)+pad2(now.getUTCDate())
+      +"T"+pad2(now.getUTCHours())+pad2(now.getUTCMinutes())+pad2(now.getUTCSeconds())+"Z";
+    (due||[]).forEach(function(it){
+      if(it.done)return;
+      var d=parseDMY(it.date);if(!d)return;
+      var ymd=""+d.getFullYear()+pad2(d.getMonth()+1)+pad2(d.getDate());
+      var m=toMin(it.time);
+      lines.push("BEGIN:VEVENT");
+      lines.push("UID:due-"+it.id+"@ubt-exam-tracker");
+      lines.push("DTSTAMP:"+stamp);
+      if(m!=null){
+        lines.push("DTSTART:"+ymd+"T"+pad2(Math.floor(m/60))+pad2(m%60)+"00");
+        lines.push("DTEND:"+ymd+"T"+pad2(Math.floor(m/60))+pad2(m%60)+"00");
+      }else{
+        var nd=new Date(d.getFullYear(),d.getMonth(),d.getDate()+1);
+        lines.push("DTSTART;VALUE=DATE:"+ymd);
+        lines.push("DTEND;VALUE=DATE:"+nd.getFullYear()+pad2(nd.getMonth()+1)+pad2(nd.getDate()));
+      }
+      lines.push(icsFold("SUMMARY:"+icsEsc((prefix||"Due: ")+it.title
+        +(it.subject?" ("+it.subject+")":""))));
+      if(it.notes||it.team)
+        lines.push(icsFold("DESCRIPTION:"+icsEsc((it.team?it.team+" — ":"")+(it.notes||""))));
+      lines.push("BEGIN:VALARM","ACTION:DISPLAY",
+        icsFold("DESCRIPTION:"+icsEsc(it.title)),"TRIGGER:-P1D","END:VALARM");
+      lines.push("END:VEVENT");
+    });
+    lines.push("END:VCALENDAR");
+    return lines.join("\r\n");
+  }
 
   /* ---------- seed & shape ---------- */
   function seedData(){
@@ -303,7 +367,7 @@
         {id:"s-2027-9",label:"September 2027",year:2027,month:9,entries:[]},
         {id:"s-2027-11",label:"November 2027",year:2027,month:11,entries:[]}
       ],
-      results:{},prep:{},schedule:[],v:2
+      results:{},prep:{},schedule:[],due:[],v:2
     };
   }
   /* sessions added in later versions, folded into older stored data once */
@@ -328,6 +392,14 @@
     d.schedule.forEach(function(en){
       en.day=+en.day;en.start=String(en.start);en.end=en.end?String(en.end):"";
       en.name=String(en.name);en.room=en.room?String(en.room):"";});
+    d.due=(d.due||[]).filter(function(it){return it&&it.id&&it.title;});
+    d.due.forEach(function(it){
+      it.title=String(it.title);
+      it.type=DUE_TYPES.indexOf(it.type)>=0?it.type:"other";
+      it.subject=it.subject?String(it.subject):"";
+      it.date=it.date?String(it.date):"";it.time=it.time?String(it.time):"";
+      it.team=it.team?String(it.team):"";it.notes=it.notes?String(it.notes):"";
+      it.done=!!it.done;});
     if(p.targetMax<p.targetMin){var t=p.targetMin;p.targetMin=p.targetMax;p.targetMax=t;}
     if(p.totalCourses<p.baseCount)p.totalCourses=p.baseCount;
     d.pool=(d.pool||[]).filter(function(e){return e&&e.id&&e.name;});
@@ -415,6 +487,7 @@
     targetRows:targetRows,reckonerRows:reckonerRows,monthsSpanned:monthsSpanned,
     weightedAvg:weightedAvg,trendPoints:trendPoints,
     SPECS:SPECS,COMMON:COMMON,curriculum:curriculum,schedNow:schedNow,toMin:toMin,
+    DUE_TYPES:DUE_TYPES,dueWhen:dueWhen,dueSplit:dueSplit,buildDueICS:buildDueICS,
     buildICS:buildICS,seedData:seedData,normalise:normalise,importAny:importAny};
   root.TrackerCore=CORE;
 
@@ -518,6 +591,25 @@
     editSched:"Edit schedule — day, time, subject, room",
     addClass:"+ Add class",saveSched:"Save schedule",
     phSubject:"Subject",phRoom:"room (optional)",
+    navDue:"Due",dueH:"Work due",
+    dueHint:"projects, homework and labs — with who you're doing them with",
+    noDue:"Nothing due 🌤 — add a project or homework and it shows up here with a countdown.",
+    addWorkCta:"Add work",addWork:"Add work — title, type, subject, deadline, people",
+    lblTitle:"Title",phTitle:"e.g. Big Data group project",
+    lblType:"Type",lblSubject:"Subject",lblDueDate:"Due date",lblDueTime:"Time (optional)",
+    lblTeam:"People (comma-separated)",phTeam:"e.g. Arta, Blend",
+    lblNotes:"Notes / requirements",phNotes:"e.g. report + presentation, upload on Moodle",
+    typeHw:"homework",typeProject:"project",typeLab:"lab",typePres:"presentation",typeOther:"other",
+    saveWork:"Save work",addToList:"Add to the list",
+    dueToday:"due today",dueTomorrow:"due tomorrow",dueInD:"due in {n}d",
+    overdueNow:"past due today",overdueD:"overdue {n}d",
+    withTeam:"with",editWork:"Edit",deleteWork:"Remove",
+    deleteConfirm:"Remove “{name}” for good?",
+    markDoneW:"Done",undoW:"Reopen",
+    doneListW:"Finished ({n})",
+    nextDueLbl:"Next due",moreOpen:"+{n} more open",
+    dueIcs:"📅 Add deadlines to calendar",
+    generalW:"— general",
     footNotes:"Averages assume a simple (unweighted) mean of passed course grades, matching how UBT displays the transcript average — failed sittings don't enter it, the course simply stays in your pool. Exam dates come from the official “Orari i Provimeve — Shtator 2026”; which Dukagjini time window applies depends on the professor, so always confirm your section and campus before each exam. Use Export to back up or move your data between devices."
   },
   sq:{
@@ -608,6 +700,25 @@
     editSched:"Ndrysho orarin — dita, ora, lënda, salla",
     addClass:"+ Shto orë",saveSched:"Ruaj orarin",
     phSubject:"Lënda",phRoom:"salla (ops.)",
+    navDue:"Detyrat",dueH:"Detyrat & projektet",
+    dueHint:"projekte, detyra dhe lab-e — bashkë me ekipin",
+    noDue:"Asgjë në afat 🌤 — shto një projekt a detyrë dhe shfaqet këtu me numërim mbrapsht.",
+    addWorkCta:"Shto detyrë",addWork:"Shto detyrë — titulli, lloji, lënda, afati, njerëzit",
+    lblTitle:"Titulli",phTitle:"p.sh. Projekti grupor i Big Data",
+    lblType:"Lloji",lblSubject:"Lënda",lblDueDate:"Afati",lblDueTime:"Ora (ops.)",
+    lblTeam:"Njerëzit (me presje)",phTeam:"p.sh. Arta, Blend",
+    lblNotes:"Shënime / kërkesat",phNotes:"p.sh. raport + prezantim, ngarkohet në Moodle",
+    typeHw:"detyrë",typeProject:"projekt",typeLab:"lab",typePres:"prezantim",typeOther:"tjetër",
+    saveWork:"Ruaj detyrën",addToList:"Shtoje në listë",
+    dueToday:"afati sot",dueTomorrow:"afati nesër",dueInD:"afati pas {n} ditësh",
+    overdueNow:"kaloi afati sot",overdueD:"vonuar {n} ditë",
+    withTeam:"me",editWork:"Ndrysho",deleteWork:"Hiqe",
+    deleteConfirm:"Ta heq “{name}” përgjithmonë?",
+    markDoneW:"Kryer",undoW:"Rihape",
+    doneListW:"Të kryera ({n})",
+    nextDueLbl:"Afati i radhës",moreOpen:"+{n} të tjera hapur",
+    dueIcs:"📅 Shto afatet në kalendar",
+    generalW:"— e përgjithshme",
     footNotes:"Mesataret llogariten si mesatare e thjeshtë (pa peshë) e notave kaluese, ashtu si e shfaq UBT-ja në transkriptë — provimet e dështuara nuk hyjnë fare, lënda thjesht mbetet në listë. Datat e provimeve vijnë nga “Orari i Provimeve — Shtator 2026” zyrtar; cili orar i Dukagjinit vlen varet nga profesori, prandaj gjithmonë konfirmoje seksionin dhe kampusin para çdo provimi. Përdor Eksporto për ta ruajtur ose bartur progresin mes pajisjeve."
   }};
   var LANG="en";
@@ -772,7 +883,7 @@
       open[el.id]=el.open;});
     buildHeader();buildYearBar();buildSessBar();buildExamsHead();buildPicker();buildCards();
     buildCalendar();buildCleared();buildTables();buildSetup();render();buildTrend();
-    renderNow();buildSchedList();fillSchedEditor();
+    renderNow();buildSchedList();fillSchedEditor();buildDue();
     Object.keys(open).forEach(function(id){
       var el=document.getElementById(id);if(el)el.open=open[id];});
     var wb=document.getElementById("whatifBtn");
@@ -1028,13 +1139,8 @@
     var sn=cur(),cal=document.getElementById("cal");cal.innerHTML="";
     var months=monthsSpanned(sn,byId());
     document.getElementById("calSection").hidden=!months.length;
-    Array.prototype.forEach.call(document.querySelectorAll('[data-nav="cal"]'),
-      function(a){a.style.display=months.length?"":"none";});
     document.getElementById("calHead").textContent=sn.label;
-    if(!months.length){
-      if(UI.view==="cal")location.hash="#/exams";
-      return;
-    }
+    if(!months.length)return;
 
     months.forEach(function(mo){
       var block=document.createElement("div");
@@ -1575,6 +1681,172 @@
     save();buildAll();
   });
 
+  /* ---------- work due ---------- */
+  var editingDue=null;
+  function dueTypeLabel(k){
+    return t({hw:"typeHw",project:"typeProject",lab:"typeLab",pres:"typePres",other:"typeOther"}[k]||"typeOther");
+  }
+  function dueChip(o){
+    if(!o.when)return {cls:"none",txt:t("noDate")};
+    var tm=o.item.time?" · "+o.item.time:"";
+    if(o.overdue)return {cls:"down",
+      txt:o.days<0?t("overdueD",{n:-o.days}):t("overdueNow")};
+    if(o.days===0)return {cls:"down",txt:t("dueToday")+tm};
+    if(o.days===1)return {cls:"up",txt:t("dueTomorrow")+tm};
+    return {cls:"none",txt:t("dueInD",{n:o.days})};
+  }
+  function subjectOptions(){
+    var seen={},out=[];
+    DATA.pool.forEach(function(e){if(!seen[e.name]){seen[e.name]=1;out.push(e.name);}});
+    (DATA.schedule||[]).forEach(function(en){if(!seen[en.name]){seen[en.name]=1;out.push(en.name);}});
+    return out.sort(function(a,b){return a.localeCompare(b);});
+  }
+  function isoToDmy(v){  /* input[type=date] value → dd.mm.yyyy */
+    var m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(v||"");
+    return m?m[3]+"."+m[2]+"."+m[1]:"";
+  }
+  function dmyToIso(v){
+    var d=parseDMY(v);
+    return d?d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate()):"";
+  }
+  function fillDueForm(it){
+    document.getElementById("dwTitle").value=it?it.title:"";
+    document.getElementById("dwType").value=it?it.type:"hw";
+    var subj=document.getElementById("dwSubject");subj.innerHTML="";
+    var o0=document.createElement("option");o0.value="";o0.textContent=t("generalW");subj.appendChild(o0);
+    var cur2=it?it.subject:"";var seenCur=false;
+    subjectOptions().forEach(function(n){
+      var o=document.createElement("option");o.value=n;o.textContent=n;
+      if(n===cur2){o.selected=true;seenCur=true;}
+      subj.appendChild(o);});
+    if(cur2&&!seenCur){
+      var ox=document.createElement("option");ox.value=cur2;ox.textContent=cur2;ox.selected=true;
+      subj.appendChild(ox);
+    }
+    document.getElementById("dwDate").value=it?dmyToIso(it.date):"";
+    document.getElementById("dwTime").value=it&&it.time?it.time:"";
+    document.getElementById("dwTeam").value=it?it.team:"";
+    document.getElementById("dwNotes").value=it?it.notes:"";
+    document.getElementById("saveWork").textContent=it?t("saveWork"):t("addToList");
+  }
+  function buildDue(){
+    /* type select options (rebuilt for language switches) */
+    var ts=document.getElementById("dwType");
+    var curType=ts.value||"hw";ts.innerHTML="";
+    DUE_TYPES.forEach(function(k){
+      var o=document.createElement("option");o.value=k;o.textContent=dueTypeLabel(k);
+      if(k===curType)o.selected=true;ts.appendChild(o);});
+    if(!editingDue)fillDueForm(null);
+
+    var s=dueSplit(DATA.due,new Date());
+    var list=document.getElementById("dueList");list.innerHTML="";
+    if(!s.open.length){
+      var empty=document.createElement("div");empty.className="card empty-state";
+      empty.innerHTML='<div class="emoji">📌</div><p>'+esc(t("noDue"))+'</p>';
+      var cta=document.createElement("button");cta.type="button";cta.className="btn primary";
+      cta.textContent=t("addWorkCta");
+      cta.addEventListener("click",function(){
+        var d=document.getElementById("dueBox");d.open=true;
+        d.scrollIntoView({behavior:"smooth",block:"center"});});
+      empty.appendChild(cta);list.appendChild(empty);
+    }
+    s.open.forEach(function(o){
+      var it=o.item,chip=dueChip(o);
+      var card=document.createElement("article");
+      card.className="card due-item"+(o.overdue?" overdue":"");
+      var head=document.createElement("div");head.className="due-head";
+      head.innerHTML='<span class="sem-badge">'+esc(dueTypeLabel(it.type))+'</span>'
+        +'<span class="contrib '+chip.cls+'">'+esc(chip.txt)+'</span>';
+      var body=document.createElement("div");body.className="due-body";
+      body.innerHTML='<div class="t">'+esc(it.title)+'</div>'
+        +'<div class="d">'+(o.when?esc(fullDate(it))+(it.time?" · "+esc(it.time):""):esc(t("noDate")))
+        +(it.subject?' · '+esc(it.subject):"")+'</div>'
+        +(it.team?'<div class="due-team">'+esc(t("withTeam"))+" "
+          +it.team.split(",").map(function(p){return '<span class="team-chip">'+esc(p.trim())+'</span>';}).join("")+'</div>':"")
+        +(it.notes?'<div class="due-notes">'+esc(it.notes)+'</div>':"");
+      var act=document.createElement("div");act.className="due-actions";
+      var done=document.createElement("button");done.type="button";done.className="done-btn";
+      done.innerHTML=CHECK_BTN+"<span>"+esc(t("markDoneW"))+"</span>";
+      done.addEventListener("click",function(){it.done=true;save();buildAll();});
+      var ed=document.createElement("button");ed.type="button";ed.className="btn small";
+      ed.textContent=t("editWork");
+      ed.addEventListener("click",function(){
+        editingDue=it.id;fillDueForm(it);
+        var d=document.getElementById("dueBox");d.open=true;
+        d.scrollIntoView({behavior:"smooth",block:"center"});});
+      var del=document.createElement("button");del.type="button";del.className="x-btn";
+      del.title=t("deleteWork");del.textContent="✕";
+      del.addEventListener("click",function(){
+        if(!confirm(t("deleteConfirm",{name:it.title})))return;
+        DATA.due=DATA.due.filter(function(x){return x.id!==it.id;});
+        if(editingDue===it.id){editingDue=null;fillDueForm(null);}
+        save();buildAll();});
+      act.appendChild(done);act.appendChild(ed);
+      card.appendChild(del);card.appendChild(head);card.appendChild(body);card.appendChild(act);
+      list.appendChild(card);
+    });
+
+    /* finished list */
+    var doneBox=document.getElementById("dueDoneBox");
+    doneBox.hidden=!s.done.length;
+    document.getElementById("dueDoneLabel").textContent=t("doneListW",{n:s.done.length});
+    var db2=document.getElementById("dueDoneList");db2.innerHTML="";
+    s.done.forEach(function(it){
+      var row=document.createElement("div");row.className="sd-row due-done-row";
+      row.innerHTML='<span class="sd-name done-name">'+esc(it.title)+'</span>'
+        +(it.subject?'<span class="sd-room">'+esc(it.subject)+'</span>':"");
+      var back=document.createElement("button");back.type="button";back.className="btn small";
+      back.textContent=t("undoW");
+      back.addEventListener("click",function(){it.done=false;save();buildAll();});
+      row.appendChild(back);db2.appendChild(row);
+    });
+
+    document.getElementById("dueIcsBtn").hidden=
+      !s.open.some(function(o){return !!o.when;});
+
+    /* overview strip + nav badge */
+    var strip=document.getElementById("dueStrip");
+    var first=null;
+    s.open.forEach(function(o){if(!first&&o.when)first=o;});
+    if(first){
+      var chip2=dueChip(first);
+      strip.hidden=false;
+      strip.innerHTML='<span class="due-pin">📌</span><b>'+esc(t("nextDueLbl"))+':</b> '
+        +'<span class="due-strip-t">'+esc(first.item.title)+'</span>'
+        +'<span class="contrib '+chip2.cls+'">'+esc(chip2.txt)+'</span>'
+        +(s.open.length>1?'<span class="due-more">'+esc(t("moreOpen",{n:s.open.length-1}))+'</span>':"");
+    }else{strip.hidden=true;strip.innerHTML="";}
+    var soon=s.open.some(function(o){
+      return o.when&&(o.overdue||o.when-new Date()<48*3600e3);});
+    Array.prototype.forEach.call(document.querySelectorAll('[data-nav="due"] .nav-dot'),
+      function(el){el.hidden=!soon;});
+  }
+  document.getElementById("saveWork").addEventListener("click",function(){
+    var title=document.getElementById("dwTitle").value.trim();
+    if(!title)return;
+    var it=editingDue?DATA.due.filter(function(x){return x.id===editingDue;})[0]:null;
+    if(!it){
+      it={id:"w"+Date.now().toString(36)+Math.floor(Math.random()*1e4).toString(36),done:false};
+      DATA.due.push(it);
+    }
+    it.title=title;
+    it.type=document.getElementById("dwType").value;
+    it.subject=document.getElementById("dwSubject").value;
+    it.date=isoToDmy(document.getElementById("dwDate").value);
+    it.time=document.getElementById("dwTime").value||"";
+    it.team=document.getElementById("dwTeam").value.trim();
+    it.notes=document.getElementById("dwNotes").value.trim();
+    editingDue=null;
+    save();buildAll();
+    fillDueForm(null);
+  });
+  document.getElementById("dueStrip").addEventListener("click",function(){
+    location.hash="#/due";});
+  document.getElementById("dueIcsBtn").addEventListener("click",function(){
+    download("deadlines-"+slug(DATA.profile.name)+".ics",
+      buildDueICS(DATA.due,t("nextDueLbl")+": "),"text/calendar;charset=utf-8");
+  });
+
   /* ---------- what-if sandbox ---------- */
   document.getElementById("whatifBtn").addEventListener("click",function(){
     WHATIF=WHATIF?null:{results:JSON.parse(JSON.stringify(DATA.results))};
@@ -1608,22 +1880,23 @@
       JSON.stringify({app:"ubt-exam-tracker",version:3,data:DATA},null,2),
       "application/json");
   });
-  /* share the backup file via the OS share sheet where supported (mobile) */
+  /* share the backup via the OS share sheet where any share support exists;
+     if file-sharing is refused, fall back to a plain download so the tap
+     always produces the backup */
   (function(){
     var btn=document.getElementById("shareBtn");
-    var can=false;
-    try{
-      can=!!(navigator.canShare&&navigator.canShare(
-        {files:[new File(["x"],"x.json",{type:"application/json"})]}));
-    }catch(e){}
-    if(!can)return;
+    if(!navigator.share)return;   /* desktop browsers keep Export instead */
     btn.hidden=false;
     btn.addEventListener("click",function(){
-      var f=new File(
-        [JSON.stringify({app:"ubt-exam-tracker",version:3,data:DATA},null,2)],
-        "exam-tracker-"+slug(DATA.profile.name)+".json",
-        {type:"application/json"});
-      navigator.share({files:[f],title:"Exam tracker backup"}).catch(function(){});
+      var name="exam-tracker-"+slug(DATA.profile.name)+".json";
+      var json=JSON.stringify({app:"ubt-exam-tracker",version:3,data:DATA},null,2);
+      var file=null;
+      try{file=new File([json],name,{type:"application/json"});}catch(e){}
+      var fallback=function(){download(name,json,"application/json");};
+      if(file&&navigator.canShare&&navigator.canShare({files:[file]})){
+        navigator.share({files:[file],title:"Exam tracker backup"})
+          .catch(function(err){if(!err||err.name!=="AbortError")fallback();});
+      }else fallback();
     });
   })();
   document.getElementById("importBtn").addEventListener("click",function(){
@@ -1671,12 +1944,11 @@
   });
 
   /* ---------- hash router: every tab is its own page ---------- */
-  var VIEW_KEYS=["home","exams","cal","sched","stats","setup"];
+  var VIEW_KEYS=["home","exams","due","sched","stats","setup"];
   function route(){
     var v=(location.hash||"").replace(/^#\/?/,"");
+    if(v==="cal")v="exams";   /* legacy link — calendar lives on the exams page */
     if(VIEW_KEYS.indexOf(v)<0)v="home";
-    /* no dated exams → no calendar page; land on exams instead */
-    if(v==="cal"&&document.getElementById("calSection").hidden)v="exams";
     UI.view=v;
     Array.prototype.forEach.call(document.querySelectorAll("[data-view]"),function(el){
       el.classList.toggle("view-off",el.dataset.view!==v);});

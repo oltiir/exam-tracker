@@ -36,6 +36,7 @@ depends on how many courses you have already banked. This makes that visible
 | ✔️ **Prep progress** | Notes · past papers · mock run per exam, with a per-card 0–3 counter and a session-wide prep % in the hero. |
 | 🏆 **Cleared history** | A collapsible list of everything passed — grade, session, and which attempt it took. |
 | 🎓 **Specialization aware** | Pick your track (Cybersecurity, Software Eng, Data & AI, Web, Networking) and year — the year-3 curriculum from the official plan appears with checkboxes and drops straight into your pool. |
+| 📌 **Work due** | Projects, homework and labs with deadlines, teammates and notes — sorted by countdown, overdue in red, a "next due" strip on the overview, a badge on the tab when something lands within 48h, and one-tap export to the phone calendar. |
 | 🕰️ **Live schedule** | Enter your weekly timetable once; the Schedule tab always shows which class you're in right now and what's next — fully offline. |
 | 🌙 **Dark mode** | Follows the system, with a manual sun/moon toggle. Warm in both directions. |
 | 🇦🇱 **Shqip / English** | Full UI translation, month and weekday names included. Auto-detects an Albanian browser; one tap to switch. |

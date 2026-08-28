@@ -48,7 +48,7 @@ try{var _t=localStorage.getItem("ubt-theme");if(_t)document.documentElement.setA
   <nav class="tabbar" aria-label="Sections">
     <a href="#/home" data-nav="home" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 9.5V21h14V9.5"/></svg><span data-i18n="navOverview"></span></a>
     <a href="#/exams" data-nav="exams"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="4"/><path d="M9 12l2.2 2.2L15.5 10"/></svg><span data-i18n="navExams"></span></a>
-    <a href="#/cal" data-nav="cal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="16" rx="3"/><path d="M3.5 10h17M8 2.8v3.7M16 2.8v3.7"/></svg><span data-i18n="navCal"></span></a>
+    <a href="#/due" data-nav="due"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4"/><path d="M5 5h12.5l-2.6 4 2.6 4H5"/></svg><span data-i18n="navDue">Due</span><span class="nav-dot" hidden></span></a>
     <a href="#/sched" data-nav="sched"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg><span data-i18n="navSched"></span></a>
     <a href="#/stats" data-nav="stats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 20v-8M12 20V5M19 20v-5"/></svg><span data-i18n="navStats"></span></a>
     <a href="#/setup" data-nav="setup"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h16"/><circle cx="9" cy="7" r="2.4" fill="var(--surface)"/><circle cx="15" cy="12" r="2.4" fill="var(--surface)"/><circle cx="8" cy="17" r="2.4" fill="var(--surface)"/></svg><span data-i18n="navSet"></span></a>
@@ -84,6 +84,7 @@ try{var _t=localStorage.getItem("ubt-theme");if(_t)document.documentElement.setA
       <div class="stat"><div class="n" id="stLast">–</div><div class="l" data-i18n="lastExam">last exam</div></div>
     </div>
     <div class="card keynums" id="keynums"></div>
+    <div class="card due-strip" id="dueStrip" hidden role="button" tabindex="0"></div>
     <div class="card trend" id="trendCard" hidden>
       <div class="trend-head"><b data-i18n="trendH">Average over time</b><span id="trendDelta"></span></div>
       <svg id="trendSvg" width="100%" height="64" role="img"></svg>
@@ -116,8 +117,45 @@ try{var _t=localStorage.getItem("ubt-theme");if(_t)document.documentElement.setA
     <div class="grid" id="grid"></div>
   </section>
 
+  <!-- work due -->
+  <section id="dueSection" data-view="due">
+    <div class="shead">
+      <h2 data-i18n="dueH">Work due</h2>
+      <span class="hint" data-i18n="dueHint">projects, homework and labs</span>
+      <button class="btn small" id="dueIcsBtn" type="button" data-i18n="dueIcs" hidden>📅 Add deadlines to calendar</button>
+    </div>
+    <div class="grid" id="dueList"></div>
+    <details class="card settings" id="dueBox" data-keep>
+      <summary>
+        <svg class="chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+        <span data-i18n="addWork">Add work — title, type, subject, deadline, people</span>
+      </summary>
+      <div class="set-body">
+        <div class="set-grid">
+          <label class="span2"><span data-i18n="lblTitle">Title</span><input id="dwTitle" data-i18n-ph="phTitle" placeholder="e.g. Big Data group project" autocomplete="off"></label>
+          <label><span data-i18n="lblType">Type</span><select id="dwType"></select></label>
+          <label><span data-i18n="lblSubject">Subject</span><select id="dwSubject"></select></label>
+          <label><span data-i18n="lblDueDate">Due date</span><input type="date" id="dwDate"></label>
+          <label><span data-i18n="lblDueTime">Time (optional)</span><input type="time" id="dwTime"></label>
+          <label class="span2"><span data-i18n="lblTeam">People (comma-separated)</span><input id="dwTeam" data-i18n-ph="phTeam" placeholder="e.g. Arta, Blend" autocomplete="off"></label>
+          <label class="span4"><span data-i18n="lblNotes">Notes / requirements</span><textarea id="dwNotes" rows="2" data-i18n-ph="phNotes"></textarea></label>
+        </div>
+        <div class="set-actions">
+          <button class="btn primary" id="saveWork" type="button">Add to the list</button>
+        </div>
+      </div>
+    </details>
+    <details class="card pick" id="dueDoneBox" data-keep hidden>
+      <summary>
+        <svg class="chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+        <span id="dueDoneLabel"></span>
+      </summary>
+      <div class="due-done-list" id="dueDoneList"></div>
+    </details>
+  </section>
+
   <!-- calendar -->
-  <section id="calSection" data-view="cal">
+  <section id="calSection" data-view="exams">
     <div class="shead">
       <h2 id="calHead">Calendar</h2>
       <span class="hint" data-i18n="calHint">exam days get a ✓ once a grade is logged</span>
@@ -286,10 +324,7 @@ try{var _t=localStorage.getItem("ubt-theme");if(_t)document.documentElement.setA
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="4"/><path d="M9 12l2.2 2.2L15.5 10"/></svg>
     <span data-i18n="navExams">Exams</span>
   </a>
-  <a href="#/cal" data-nav="cal">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="16" rx="3"/><path d="M3.5 10h17M8 2.8v3.7M16 2.8v3.7"/></svg>
-    <span data-i18n="navCal">Calendar</span>
-  </a>
+  <a href="#/due" data-nav="due"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4"/><path d="M5 5h12.5l-2.6 4 2.6 4H5"/></svg><span data-i18n="navDue">Due</span><span class="nav-dot" hidden></span></a>
   <a href="#/sched" data-nav="sched">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>
     <span data-i18n="navSched">Schedule</span>
@@ -314,10 +349,7 @@ try{var _t=localStorage.getItem("ubt-theme");if(_t)document.documentElement.setA
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="4"/><path d="M9 12l2.2 2.2L15.5 10"/></svg>
     <span data-i18n="navExams">Exams</span>
   </a>
-  <a href="#/cal" data-nav="cal">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="16" rx="3"/><path d="M3.5 10h17M8 2.8v3.7M16 2.8v3.7"/></svg>
-    <span data-i18n="navCal">Calendar</span>
-  </a>
+  <a href="#/due" data-nav="due"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4"/><path d="M5 5h12.5l-2.6 4 2.6 4H5"/></svg><span data-i18n="navDue">Due</span><span class="nav-dot" hidden></span></a>
   <a href="#/sched" data-nav="sched">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>
     <span data-i18n="navSched">Schedule</span>

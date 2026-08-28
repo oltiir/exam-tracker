@@ -338,6 +338,40 @@ select.slot:focus{border-color:var(--accent);outline:none}
 .exam-row .f-time{flex:0 0 96px}
 .exam-row .f-day7{flex:0 0 108px}
 
+/* ---------- work due ---------- */
+.due-strip{margin-top:12px;padding:12px 18px;display:flex;align-items:center;gap:10px;
+  flex-wrap:wrap;font-size:13px;color:var(--muted);cursor:pointer;transition:.15s}
+.due-strip:hover{border-color:var(--faint)}
+.due-strip b{font-family:var(--display);font-weight:600;color:var(--ink);font-size:13px}
+.due-strip .due-strip-t{font-weight:600;color:var(--ink)}
+.due-strip .due-more{font:500 11.5px var(--mono);color:var(--faint);margin-left:auto}
+.due-item{position:relative;padding:16px;display:flex;flex-direction:column;gap:10px}
+.due-item.overdue{border-color:#ecc9be;background:linear-gradient(180deg,var(--bad-soft),var(--surface) 55%)}
+.due-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding-right:20px}
+.due-body .t{font-family:var(--display);font-weight:600;font-size:16px;line-height:1.3}
+.due-body .d{font:500 11px/1.5 var(--mono);color:var(--muted);margin-top:3px}
+.due-team{margin-top:8px;font-size:12px;color:var(--muted);display:flex;align-items:center;
+  gap:6px;flex-wrap:wrap}
+.team-chip{font:600 11px/1 var(--body);color:var(--accent);background:var(--accent-soft);
+  padding:5px 10px;border-radius:999px}
+.due-notes{margin-top:8px;font-size:12.5px;color:var(--muted);background:var(--tint);
+  border-radius:10px;padding:8px 11px;line-height:1.5}
+.due-actions{display:flex;gap:8px;align-items:center;padding-top:10px;
+  border-top:1px dashed var(--hair)}
+.due-done-list{border-top:1px solid var(--hair);padding:8px 16px 12px}
+.due-done-row{align-items:center}
+.done-name{text-decoration:line-through;color:var(--muted);font-weight:500}
+.due-done-row .btn{margin-left:auto;flex:none}
+textarea{font:inherit;resize:vertical}
+.set-grid label.span4{grid-column:1/-1}
+
+/* small "due soon" badge on the Due nav item */
+.bnav a,.snav a,.tabbar a{position:relative}
+.nav-dot{position:absolute;top:6px;right:14px;width:8px;height:8px;border-radius:50%;
+  background:var(--bad);box-shadow:0 0 0 2.5px var(--surface)}
+.tabbar a .nav-dot{top:7px;right:9px}
+.nav-dot[hidden]{display:none}
+
 /* ---------- specialization curriculum picker ---------- */
 .spec-panel{margin-top:18px;border-top:1px dashed var(--hair);padding-top:6px}
 .spec-panel h4{font-family:var(--display);font-weight:600;font-size:13.5px;margin-top:12px}
@@ -468,8 +502,19 @@ details.settings{margin-top:14px}
   .two-col{grid-template-columns:1fr}
   .grid{grid-template-columns:1fr}
   .set-grid{grid-template-columns:repeat(2,1fr)}
-  h1{font-size:22px}
   .set-body input,.set-body textarea,.set-body select{font-size:16px} /* prevents iOS focus zoom */
+  /* compact one-row header: the bottom tabs carry navigation, so the
+     header only keeps identity + the two toggles */
+  .top{align-items:center;flex-wrap:nowrap;padding-bottom:12px;gap:10px}
+  .brand{align-items:center;gap:10px;flex:1;min-width:0}
+  .mark{width:34px;height:34px;border-radius:11px;box-shadow:0 3px 8px -3px rgba(165,76,44,.5)}
+  .mark svg{width:18px;height:18px}
+  .eyebrow{display:none}
+  h1{font-size:16.5px;margin-top:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .lede{display:none}
+  #customizeBtn{display:none}
+  .hdr-actions{gap:7px}
+  .icon-btn{width:37px;height:37px}
 }
 @media(min-width:761px){
   body{padding-bottom:70px}
@@ -480,8 +525,6 @@ details.settings{margin-top:14px}
   .beaker{width:64px;height:150px}
   .cal-grid>div{min-height:48px;padding:5px}
   .tbl th,.tbl td{padding-left:14px;padding-right:14px}
-  .hdr-actions{width:100%}
-  .hdr-actions #customizeBtn{flex:1;justify-content:center}
 }
 @media(prefers-reduced-motion:reduce){
   *{transition:none!important;animation:none!important}
