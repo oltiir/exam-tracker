@@ -31,6 +31,12 @@ depends on how many courses you have already banked. This makes that visible
 | 🌊 **Waterline gauge** | Your starting average is the waterline. Log a grade and the bar moves — green above the line, red below. Failed sittings don't count against it. |
 | 📅 **Live calendars** | Built from the selected session's actual dates, one Monday-first grid per month spanned — an 01.10 exam inside the September session simply adds an October grid. |
 | 📊 **GPA tables** | Target bands (full precision, so the ceiling row is honest) and a ready-reckoner over the session's pending exams. |
+| 📅 **Add to phone calendar** | One tap exports the open session's pending exams as an `.ics` file — dates, time slots and a day-before reminder land in Google/Apple Calendar. |
+| 🎲 **What-if mode** | A sandbox toggle: tap grades freely to see what they'd do to your average, then exit — nothing is saved. |
+| ✔️ **Prep progress** | Notes · past papers · mock run per exam, with a per-card 0–3 counter and a session-wide prep % in the hero. |
+| 🏆 **Cleared history** | A collapsible list of everything passed — grade, session, and which attempt it took. |
+| 🌙 **Dark mode** | Follows the system, with a manual sun/moon toggle. Warm in both directions. |
+| 🇦🇱 **Shqip / English** | Full UI translation, month and weekday names included. Auto-detects an Albanian browser; one tap to switch. |
 | 💾 **Export / Import** | Full state as JSON — back it up or move it between devices. Old-format exports convert on import. |
 | 📴 **Offline** | Service worker caches everything (fonts included) after first load. Installable to the home screen. |
 
