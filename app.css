@@ -60,7 +60,9 @@ body{
   }
 }
 .wrap{max-width:1040px;margin:0 auto}
-section{margin-top:38px;scroll-margin-top:14px}
+section{margin-top:30px;scroll-margin-top:14px}
+/* the router shows one page at a time */
+.view-off{display:none!important}
 button{font:inherit;color:inherit;-webkit-tap-highlight-color:transparent}
 :focus-visible{outline:2.5px solid var(--accent);outline-offset:2px;border-radius:6px}
 
@@ -428,6 +430,20 @@ details.settings{margin-top:14px}
 .bnav a svg{width:21px;height:21px}
 .bnav a.on{color:var(--accent);background:var(--accent-soft)}
 .bnav a:active{transform:scale(.94)}
+
+/* ---------- top tab bar (mid-width desktop) ---------- */
+.tabbar{display:none}
+@media(min-width:761px) and (max-width:1259px){
+  .tabbar{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap}
+  .tabbar a{display:inline-flex;align-items:center;gap:8px;font:600 13px var(--body);
+    color:var(--muted);text-decoration:none;border:1px solid var(--border);
+    background:var(--surface);border-radius:999px;padding:9px 16px;transition:.15s;
+    box-shadow:0 1px 2px rgba(88,70,48,.06)}
+  .tabbar a svg{width:16px;height:16px}
+  .tabbar a:hover{border-color:var(--faint);color:var(--ink)}
+  .tabbar a.on{background:var(--accent);border-color:var(--accent);color:#fff;
+    box-shadow:0 6px 16px -6px rgba(165,76,44,.5)}
+}
 
 /* ---------- desktop sidebar navigation ---------- */
 .snav{display:none}

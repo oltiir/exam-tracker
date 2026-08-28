@@ -451,7 +451,7 @@
     whatif:"🎲 What-if mode",whatifOn:"✕ Exit what-if",
     whatifBanner:"Sandbox — grades you tap now are pretend and are not saved.",
     addExams:"Add exams to this session",toPick:"{n} to pick from",poolClear:"pool is clear",
-    poolClearMsg:"Everything in the pool has been passed 🎉 — add more courses in <b>Set up → Exam pool</b> below.",
+    poolClearMsg:"Everything in the pool has been passed 🎉 — add more courses in <b>Set up → Exam pool</b>.",
     pickSub:"Tick exams from your pool above — nothing is retyped. Passing an exam (grade 6+) removes it from the pool everywhere; a 5 keeps it there flagged <b>retake</b>.",
     retake:"retake",alsoIn:"also in ",
     noneFor:"Nothing planned for <b>{s}</b> yet.",noneSub:"Tick exams from your pool — no retyping.",
@@ -541,7 +541,7 @@
     whatif:"🎲 Modaliteti 'po sikur'",whatifOn:"✕ Dil nga 'po sikur'",
     whatifBanner:"Provë — notat që i prek tani janë sa për të parë dhe nuk ruhen.",
     addExams:"Shto provime në këtë sesion",toPick:"{n} për të zgjedhur",poolClear:"lista është e pastër",
-    poolClearMsg:"Gjithçka në listë është kaluar 🎉 — shto lëndë te <b>Cilësimet → Lista e provimeve</b> më poshtë.",
+    poolClearMsg:"Gjithçka në listë është kaluar 🎉 — shto lëndë te <b>Cilësimet → Lista e provimeve</b>.",
     pickSub:"Zgjidhi provimet nga lista më lart — asgjë nuk rishkruhet. Kalimi i provimit (nota 6+) e heq nga lista kudo; 5-shi e mban aty me shenjën <b>rimarrje</b>.",
     retake:"rimarrje",alsoIn:"edhe në ",
     noneFor:"Asgjë e planifikuar për <b>{s}</b> ende.",noneSub:"Zgjidhi provimet nga lista — pa rishkruar asgjë.",
@@ -690,7 +690,7 @@
   };
 
   var DATA=seedData();
-  var UI={session:null};        /* view state only — never persisted */
+  var UI={session:null,view:"home"};   /* view state only — never persisted */
   var WHATIF=null;              /* sandbox overlay of results, or null */
 
   function save(){if(!WHATIF)store.set(K,JSON.stringify(DATA));}
@@ -1028,10 +1028,13 @@
     var sn=cur(),cal=document.getElementById("cal");cal.innerHTML="";
     var months=monthsSpanned(sn,byId());
     document.getElementById("calSection").hidden=!months.length;
-    Array.prototype.forEach.call(document.querySelectorAll('[data-nav="calSection"]'),
+    Array.prototype.forEach.call(document.querySelectorAll('[data-nav="cal"]'),
       function(a){a.style.display=months.length?"":"none";});
     document.getElementById("calHead").textContent=sn.label;
-    if(!months.length)return;
+    if(!months.length){
+      if(UI.view==="cal")location.hash="#/exams";
+      return;
+    }
 
     months.forEach(function(mo){
       var block=document.createElement("div");
@@ -1272,9 +1275,7 @@
   }
 
   /* ---------- setup editors ---------- */
-  function openSetup(){
-    document.getElementById("setupSection").scrollIntoView({behavior:"smooth",block:"start"});
-  }
+  function openSetup(){location.hash="#/setup";}
   document.getElementById("customizeBtn").addEventListener("click",openSetup);
 
   function buildSetup(){
@@ -1669,20 +1670,24 @@
     setSaveState();buildAll();
   });
 
-  /* ---------- nav scrollspy (bottom tabs + desktop sidebar) ---------- */
-  var SPY_SECTIONS=["top","examsSection","calSection","schedSection","gpaSection","setupSection"];
-  var spyQueued=false;
-  function runSpy(){
-    spyQueued=false;
-    var y=window.scrollY+150,curId="top";
-    SPY_SECTIONS.forEach(function(id){var el=document.getElementById(id);
-      if(el&&!el.hidden&&el.offsetTop<=y)curId=id;});
+  /* ---------- hash router: every tab is its own page ---------- */
+  var VIEW_KEYS=["home","exams","cal","sched","stats","setup"];
+  function route(){
+    var v=(location.hash||"").replace(/^#\/?/,"");
+    if(VIEW_KEYS.indexOf(v)<0)v="home";
+    /* no dated exams → no calendar page; land on exams instead */
+    if(v==="cal"&&document.getElementById("calSection").hidden)v="exams";
+    UI.view=v;
+    Array.prototype.forEach.call(document.querySelectorAll("[data-view]"),function(el){
+      el.classList.toggle("view-off",el.dataset.view!==v);});
     Array.prototype.forEach.call(document.querySelectorAll("[data-nav]"),function(a){
-      a.classList.toggle("on",a.dataset.nav===curId);});
+      a.classList.toggle("on",a.dataset.nav===v);});
+    /* things that size or tick against the live page */
+    if(v==="home")buildTrend();
+    if(v==="sched"){renderNow();buildSchedList();}
+    window.scrollTo(0,0);
   }
-  window.addEventListener("scroll",function(){
-    if(!spyQueued){spyQueued=true;requestAnimationFrame(runSpy);}
-  },{passive:true});
+  window.addEventListener("hashchange",route);
 
   /* ---------- init ---------- */
   function init(){
@@ -1704,10 +1709,10 @@
     store.get(K).then(function(v){
       if(v){try{DATA=normalise(JSON.parse(v));}catch(e){DATA=seedData();}}
       UI.session=autoSelect(DATA.sessions,DATA.pool,NOW);
-      buildAll();runSpy();
+      buildAll();route();
     }).catch(function(){
       UI.session=autoSelect(DATA.sessions,DATA.pool,NOW);
-      buildAll();runSpy();
+      buildAll();route();
     });
   }
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);

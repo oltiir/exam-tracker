@@ -131,7 +131,7 @@ No build step, no dependencies, no framework — three plain files.
 
 ```
 index.html              markup
-app.css                 styles — warm palette, mobile-first, bottom tab bar
+app.css                 styles — warm palette, mobile-first, tabbed pages
 app.js                  logic — vanilla JS, no dependencies
 sw.js                   service worker — cache-first with background refresh,
                         also caches Google Fonts for offline use
