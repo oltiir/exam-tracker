@@ -37,11 +37,11 @@
       s5:["Rrjetat Kompjuterike 2","Bazat e Telekomunikacionit dhe Rrjeteve pa Tela"],
       s6:["Komunikimet Mobile","Menaxhimi dhe Siguria e Rrjeteve"]}
   };
+  /* electives (lëndët zgjedhore) are deliberately NOT listed — every
+     student picks different ones, so those are added manually */
   var COMMON={
     s5:["Bazat e Inteligjencës Artificiale","Sistemet e Ndërlidhura","Menaxhimi i Projekteve dhe Ndërmarrësia"],
-    s6:["Cloud Computing","Lënda Laboratorike 2 – Projekt Grupor","Tema e Diplomës (Bachelor Thesis)"],
-    e5:["Infrastruktura e Serverëve","Interneti i Gjërave (IoT)"],
-    e6:["Orientimi në Karrierë, Komunikim dhe Zhvillim","Programimi i Lojërave"]
+    s6:["Cloud Computing","Lënda Laboratorike 2 – Projekt Grupor","Tema e Diplomës (Bachelor Thesis)"]
   };
   /* ECTS per year-3 subject (official curriculum structure);
      specialization stream courses are 5 ECTS each */
@@ -60,10 +60,8 @@
     function push(n,sem,kind){out.push({name:n,sem:sem,kind:kind,ects:Y3_ECTS[n]||5});}
     COMMON.s5.forEach(function(n){push(n,5,"oblig");});
     if(sp)sp.s5.forEach(function(n){push(n,5,"spec");});
-    COMMON.e5.forEach(function(n){push(n,5,"elect");});
     COMMON.s6.forEach(function(n){push(n,6,"oblig");});
     if(sp)sp.s6.forEach(function(n){push(n,6,"spec");});
-    COMMON.e6.forEach(function(n){push(n,6,"elect");});
     return out;
   }
 
@@ -77,8 +75,6 @@
     {name:"Arkitektura dhe Organizimi i Kompjuterëve",sem:1,ects:5},
     {name:"Shkrim Akademik dhe Seminar",sem:1,ects:5},
     {name:"Gjuhë Angleze për Inxhinieri",sem:1,ects:4},
-    {name:"Gjuhë Gjermane",sem:1,ects:5,kind:"elect"},
-    {name:"Gjuhë Italiane",sem:1,ects:4,kind:"elect"},
     {name:"Shkenca Kompjuterike 1",sem:2,ects:6},
     {name:"Matematikë 2",sem:2,ects:5},
     {name:"Sistemet Operative",sem:2,ects:5},
@@ -679,7 +675,7 @@
     majorCse:"Shkenca Kompjuterike dhe Inxhinieri · CSE",
     semLbl:"Semester {n}",
     curricH:"Official CSE curriculum — up to year {n}",
-    curricSub:"Tick subjects, then send them where they belong: exams you still owe → the pool; exams you've passed → completed courses. Semesters stay editable afterwards, so you can move a subject if the plan shifts.",
+    curricSub:"Tick subjects, then send them where they belong: exams you still owe → the pool; exams you've passed → completed courses. Electives (zgjedhore) aren't listed — add yours manually in the exam pool. Semesters stay editable afterwards, so you can move a subject if the plan shifts.",
     toPool:"→ exam pool",toPassed:"→ passed courses",
     inPassed:"✓ already passed",
     gradeNote:"Added with grade 8 as a placeholder — open “Completed courses” and set the real grades.",
@@ -810,7 +806,7 @@
     majorCse:"Shkenca Kompjuterike dhe Inxhinieri · CSE",
     semLbl:"Semestri {n}",
     curricH:"Plani zyrtar i CSE-së — deri në vitin {n}",
-    curricSub:"Shënoji lëndët dhe çoji ku duhet: provimet që t'kanë mbetur → në listë; ato që i ke kaluar → te të përfunduarat. Semestrat mbeten të ndryshueshëm më vonë, po lëvizi lëndët nëse ndryshon plani.",
+    curricSub:"Shënoji lëndët dhe çoji ku duhet: provimet që t'kanë mbetur → në listë; ato që i ke kaluar → te të përfunduarat. Lëndët zgjedhore s'janë në listë — shtoji vetë në listën e provimeve. Semestrat mbeten të ndryshueshëm më vonë, po lëvizi lëndët nëse ndryshon plani.",
     toPool:"→ lista e provimeve",toPassed:"→ lëndët e kaluara",
     inPassed:"✓ e kaluar tashmë",
     gradeNote:"U shtuan me notën 8 si vendmbajtëse — hape “Lëndët e përfunduara” dhe vendosi notat e vërteta.",
