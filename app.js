@@ -601,6 +601,9 @@
     specPanelSub:"Tick what you'll take and add it straight to your exam pool. Electives: pick 1 of the 2 per semester.",
     addSel:"Add selected to exam pool",inPool:"already in the pool",
     kOblig:"obligatory",kSpec:"specialization",kElect:"elective — 1 of 2",
+    navMore:"More",
+    tabsSum:"Bottom bar (phone) — pick your tabs",
+    tabsHint:"Tick up to 4 tabs to keep in the bar; everything else waits under “More”.",
     navSched:"Schedule",schedH:"University schedule",
     schedHint:"works offline — it always knows where you are in the week",
     nowPill:"Now",nextPill:"Next",
@@ -720,6 +723,9 @@
     specPanelSub:"Zgjidh çka do të ndjekësh dhe shtoje direkt në listën e provimeve. Zgjedhoret: 1 nga 2 për semestër.",
     addSel:"Shto të zgjedhurat në listën e provimeve",inPool:"tashmë në listë",
     kOblig:"obligative",kSpec:"specializim",kElect:"zgjedhore — 1 nga 2",
+    navMore:"Më shumë",
+    tabsSum:"Shiriti i poshtëm (telefon) — zgjidhi skedat",
+    tabsHint:"Shëno deri në 4 skeda që rrinë në shirit; të tjerat presin te “Më shumë”.",
     navSched:"Orari",schedH:"Orari i universitetit",
     schedHint:"punon pa internet — e di gjithmonë ku je gjatë javës",
     nowPill:"Tani",nextPill:"Pas",
@@ -805,6 +811,8 @@
     if(meta)meta.setAttribute("content",effectiveDark()?"#1f1b15":"#f6f1e8");
     var b=document.getElementById("themeBtn");
     if(b)b.innerHTML=effectiveDark()?SUN:MOON;
+    var b2=document.getElementById("themeBtn2");
+    if(b2)b2.innerHTML=effectiveDark()?SUN:MOON;
   }
 
   /* ?today=YYYY-MM-DD lets you fake the clock to test auto-selection */
@@ -922,7 +930,7 @@
       open[el.id]=el.open;});
     buildHeader();buildYearBar();buildSessBar();buildExamsHead();buildPicker();buildCards();
     buildCalendar();buildCleared();buildTables();buildSetup();render();buildTrend();
-    renderNow();buildSchedList();fillSchedEditor();buildDue();
+    renderNow();buildSchedList();fillSchedEditor();renderBnav();buildTabsEditor();buildDue();
     Object.keys(open).forEach(function(id){
       var el=document.getElementById(id);if(el)el.open=open[id];});
     var wb=document.getElementById("whatifBtn");
@@ -1931,6 +1939,9 @@
       return o.when&&(o.overdue||o.when-new Date()<48*3600e3);});
     Array.prototype.forEach.call(document.querySelectorAll('[data-nav="due"] .nav-dot'),
       function(el){el.hidden=!soon;});
+    /* when Due isn't pinned, the dot rides on the More button instead */
+    var md=document.getElementById("moreDot");
+    if(md)md.hidden=!(soon&&getTabs().indexOf("due")<0);
   }
   document.getElementById("saveWork").addEventListener("click",function(){
     var title=document.getElementById("dwTitle").value.trim();
@@ -2045,14 +2056,103 @@
     document.getElementById("footNotes").textContent=t("footNotes");
   }
 
-  /* ---------- theme & language toggles ---------- */
-  document.getElementById("themeBtn").addEventListener("click",function(){
-    applyTheme(effectiveDark()?"light":"dark");
-  });
-  document.getElementById("langBtn").addEventListener("click",function(){
+  /* ---------- theme & language toggles (header + More sheet) ---------- */
+  function toggleTheme(){applyTheme(effectiveDark()?"light":"dark");}
+  function toggleLang(){
     setLang(LANG==="en"?"sq":"en");
     setSaveState();buildAll();route();
+  }
+  document.getElementById("themeBtn").addEventListener("click",toggleTheme);
+  document.getElementById("langBtn").addEventListener("click",toggleLang);
+  document.getElementById("themeBtn2").addEventListener("click",toggleTheme);
+  document.getElementById("langBtn2").addEventListener("click",toggleLang);
+
+  /* ---------- customizable bottom bar + "More" sheet ---------- */
+  var NAV_ICONS={
+    home:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 9.5V21h14V9.5"/></svg>',
+    exams:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="4"/><path d="M9 12l2.2 2.2L15.5 10"/></svg>',
+    due:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4"/><path d="M5 5h12.5l-2.6 4 2.6 4H5"/></svg>',
+    sched:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>',
+    stats:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 20v-8M12 20V5M19 20v-5"/></svg>',
+    setup:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h16"/><circle cx="9" cy="7" r="2.4" fill="var(--surface)"/><circle cx="15" cy="12" r="2.4" fill="var(--surface)"/><circle cx="8" cy="17" r="2.4" fill="var(--surface)"/></svg>'
+  };
+  var NAV_DEF=[
+    {k:"home",l:"navOverview"},{k:"exams",l:"navExams"},{k:"due",l:"navDue"},
+    {k:"sched",l:"navSched"},{k:"stats",l:"navStats"},{k:"setup",l:"navSet"}];
+  var MORE_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4.5 7.5h15M4.5 12h15M4.5 16.5h15"/></svg>';
+  var DEFAULT_TABS=["home","exams","due","sched"];
+  function getTabs(){
+    try{
+      var v=JSON.parse(localStorage.getItem("ubt-tabs")||"null");
+      if(Array.isArray(v)){
+        v=v.filter(function(k){return VIEW_KEYS.indexOf(k)>=0;});
+        return v.slice(0,4);
+      }
+    }catch(e){}
+    return DEFAULT_TABS.slice();
+  }
+  function setTabsPref(list){
+    try{localStorage.setItem("ubt-tabs",JSON.stringify(list));}catch(e){}
+  }
+  function openSheet(){document.getElementById("moreBackdrop").hidden=false;}
+  function closeSheet(){document.getElementById("moreBackdrop").hidden=true;}
+  document.getElementById("moreBackdrop").addEventListener("click",function(ev){
+    if(ev.target===this)closeSheet();
   });
+  function renderBnav(){
+    var pinned=getTabs();
+    var bar=document.getElementById("bnav");bar.innerHTML="";
+    NAV_DEF.forEach(function(d){
+      if(pinned.indexOf(d.k)<0)return;
+      var a=document.createElement("a");
+      a.href="#/"+d.k;a.dataset.nav=d.k;
+      a.className=UI.view===d.k?"on":"";
+      a.innerHTML=NAV_ICONS[d.k]+'<span>'+esc(t(d.l))+'</span>'
+        +(d.k==="due"?'<span class="nav-dot" hidden></span>':"");
+      bar.appendChild(a);
+    });
+    var more=document.createElement("button");more.type="button";more.id="moreBtn";
+    more.className=pinned.indexOf(UI.view)<0?"on":"";
+    more.innerHTML=MORE_ICON+'<span>'+esc(t("navMore"))+'</span>'
+      +'<span class="nav-dot" id="moreDot" hidden></span>';
+    more.addEventListener("click",openSheet);
+    bar.appendChild(more);
+    /* the sheet lists everything NOT pinned */
+    var list=document.getElementById("sheetList");list.innerHTML="";
+    NAV_DEF.forEach(function(d){
+      if(pinned.indexOf(d.k)>=0)return;
+      var a=document.createElement("a");
+      a.href="#/"+d.k;a.dataset.nav=d.k;
+      a.className="sheet-item"+(UI.view===d.k?" on":"");
+      a.innerHTML=NAV_ICONS[d.k]+'<span>'+esc(t(d.l))+'</span>'
+        +(d.k==="due"?'<span class="nav-dot" hidden></span>':"");
+      list.appendChild(a);
+    });
+    var lb=document.getElementById("langBtn2");
+    if(lb)lb.textContent=LANG==="en"?"SQ":"EN";
+    var tb=document.getElementById("themeBtn2");
+    if(tb)tb.innerHTML=effectiveDark()?SUN:MOON;
+  }
+  function buildTabsEditor(){
+    var box=document.getElementById("tabRows");box.innerHTML="";
+    var pinned=getTabs();
+    NAV_DEF.forEach(function(d){
+      box.appendChild(makeCheck("tab-"+d.k,t(d.l),function(v){
+        var cur=getTabs();
+        if(v){
+          if(cur.indexOf(d.k)<0){
+            if(cur.length>=4){buildTabsEditor();return;}   /* cap reached — revert */
+            cur.push(d.k);
+          }
+        }else cur=cur.filter(function(k){return k!==d.k;});
+        /* canonical order, like the full nav */
+        cur=NAV_DEF.map(function(x){return x.k;})
+          .filter(function(k){return cur.indexOf(k)>=0;});
+        setTabsPref(cur);
+        renderBnav();buildTabsEditor();buildDue();
+      },pinned.indexOf(d.k)>=0));
+    });
+  }
 
   /* ---------- hash router: every tab is its own page ---------- */
   var VIEW_KEYS=["home","exams","due","sched","stats","setup"];
@@ -2070,6 +2170,9 @@
       el.classList.toggle("view-off",el.dataset.view!==v);});
     Array.prototype.forEach.call(document.querySelectorAll("[data-nav]"),function(a){
       a.classList.toggle("on",a.dataset.nav===v);});
+    var mb=document.getElementById("moreBtn");
+    if(mb)mb.classList.toggle("on",getTabs().indexOf(v)<0);
+    closeSheet();
     /* things that size or tick against the live page */
     if(v==="home")buildTrend();
     if(v==="sched"){renderNow();buildSchedList();}

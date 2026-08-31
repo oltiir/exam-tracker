@@ -315,6 +315,16 @@ try{var _t=localStorage.getItem("ubt-theme");if(_t)document.documentElement.setA
         </div>
       </div>
     </details>
+    <details class="card settings" id="tabsBox" data-keep>
+      <summary>
+        <svg class="chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+        <span data-i18n="tabsSum">Bottom bar (phone) — pick your tabs</span>
+      </summary>
+      <div class="set-body">
+        <p class="set-hint" data-i18n="tabsHint"></p>
+        <div id="tabRows" class="tab-rows"></div>
+      </div>
+    </details>
   </section>
 
   <div data-view="setup">
@@ -335,30 +345,20 @@ try{var _t=localStorage.getItem("ubt-theme");if(_t)document.documentElement.setA
 
 </div>
 
-<!-- mobile bottom navigation -->
-<nav class="bnav" aria-label="Sections">
-  <a href="#/home" data-nav="home" class="on">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 9.5V21h14V9.5"/></svg>
-    <span data-i18n="navOverview">Overview</span>
-  </a>
-  <a href="#/exams" data-nav="exams">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="4"/><path d="M9 12l2.2 2.2L15.5 10"/></svg>
-    <span data-i18n="navExams">Exams</span>
-  </a>
-  <a href="#/due" data-nav="due"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4"/><path d="M5 5h12.5l-2.6 4 2.6 4H5"/></svg><span data-i18n="navDue">Due</span><span class="nav-dot" hidden></span></a>
-  <a href="#/sched" data-nav="sched">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>
-    <span data-i18n="navSched">Schedule</span>
-  </a>
-  <a href="#/stats" data-nav="stats">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 20v-8M12 20V5M19 20v-5"/></svg>
-    <span data-i18n="navStats">Insights</span>
-  </a>
-  <a href="#/setup" data-nav="setup">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h16"/><circle cx="9" cy="7" r="2.4" fill="var(--bg)"/><circle cx="15" cy="12" r="2.4" fill="var(--bg)"/><circle cx="8" cy="17" r="2.4" fill="var(--bg)"/></svg>
-    <span data-i18n="navSet">Set up</span>
-  </a>
-</nav>
+<!-- mobile bottom navigation (rendered from the user's pinned tabs) -->
+<nav class="bnav" id="bnav" aria-label="Sections"></nav>
+
+<!-- "More" sheet: unpinned pages + quick toggles -->
+<div class="sheet-backdrop" id="moreBackdrop" hidden>
+  <div class="sheet" role="menu" aria-label="More">
+    <div class="sheet-grab"></div>
+    <div class="sheet-list" id="sheetList"></div>
+    <div class="sheet-tools">
+      <button class="icon-btn" id="langBtn2" type="button" title="Shqip / English">SQ</button>
+      <button class="icon-btn" id="themeBtn2" type="button" title="Light / dark" aria-label="Toggle theme"></button>
+    </div>
+  </div>
+</div>
 
 <!-- desktop sidebar navigation (wide screens only) -->
 <nav class="snav" aria-label="Sections">
