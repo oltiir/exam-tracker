@@ -77,6 +77,7 @@ button{font:inherit;color:inherit;-webkit-tap-highlight-color:transparent}
   box-shadow:0 6px 16px -6px rgba(165,76,44,.5)}
 .mark svg{width:24px;height:24px}
 .eyebrow{font:600 10.5px/1 var(--body);letter-spacing:.14em;text-transform:uppercase;color:var(--faint)}
+.h1-page{display:none}   /* desktop keeps the brand header on every page */
 h1{font-family:var(--display);font-weight:600;font-size:25px;letter-spacing:-.01em;margin-top:5px;line-height:1.2}
 .lede{color:var(--muted);font-size:13.5px;margin-top:5px;max-width:56ch}
 .hdr-actions{display:flex;gap:9px;align-items:center}
@@ -514,18 +515,27 @@ details.settings{margin-top:14px}
   .grid{grid-template-columns:1fr}
   .set-grid{grid-template-columns:repeat(2,1fr)}
   .set-body input,.set-body textarea,.set-body select{font-size:16px} /* prevents iOS focus zoom */
-  /* compact one-row header: the bottom tabs carry navigation, so the
-     header only keeps identity + the two toggles */
-  .top{align-items:center;flex-wrap:nowrap;padding-bottom:12px;gap:10px}
+  /* compact one-row header: identity + toggles on the Overview page,
+     just the current page's title everywhere else */
+  .top{align-items:center;flex-wrap:nowrap;padding-bottom:12px;gap:10px;min-height:50px}
   .brand{align-items:center;gap:10px;flex:1;min-width:0}
+  .brand>div{min-width:0}
   .mark{width:34px;height:34px;border-radius:11px;box-shadow:0 3px 8px -3px rgba(165,76,44,.5)}
   .mark svg{width:18px;height:18px}
   .eyebrow{display:none}
-  h1{font-size:16.5px;margin-top:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  h1{font-size:17px;margin-top:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .lede{display:none}
   #customizeBtn{display:none}
   .hdr-actions{gap:7px}
   .icon-btn{width:37px;height:37px}
+  body:not([data-view="home"]) .mark{display:none}
+  body:not([data-view="home"]) #hTitle{display:none}
+  body:not([data-view="home"]) .h1-page{display:inline;font-size:19px}
+  body:not([data-view="home"]) .hdr-actions{display:none}
+  /* the header already names these pages — drop the duplicate heading */
+  #schedSection>.shead h2,#dueSection>.shead h2,
+  #gpaSection>.shead h2,#setupSection>.shead h2{display:none}
+  #schedSection,#dueSection,#gpaSection,#setupSection{margin-top:20px}
 }
 @media(min-width:761px){
   body{padding-bottom:70px}

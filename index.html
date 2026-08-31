@@ -20,7 +20,7 @@ try{var _t=localStorage.getItem("ubt-theme");if(_t)document.documentElement.setA
 <link rel="stylesheet" href="app.css">
 <script src="app.js" defer></script>
 </head>
-<body>
+<body data-view="home">
 <div class="wrap">
 
   <header class="top" id="top">
@@ -30,7 +30,7 @@ try{var _t=localStorage.getItem("ubt-theme");if(_t)document.documentElement.setA
       </div>
       <div>
         <div class="eyebrow" data-i18n="eyebrow">Kolegji UBT · Exam session tracker</div>
-        <h1 id="hTitle">Exam Tracker &amp; GPA Planner</h1>
+        <h1><span id="hTitle">Exam Tracker &amp; GPA Planner</span><span class="h1-page" id="pageTitle"></span></h1>
         <p class="lede" id="hLede"></p>
       </div>
     </div>

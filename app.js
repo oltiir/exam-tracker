@@ -2051,7 +2051,7 @@
   });
   document.getElementById("langBtn").addEventListener("click",function(){
     setLang(LANG==="en"?"sq":"en");
-    setSaveState();buildAll();
+    setSaveState();buildAll();route();
   });
 
   /* ---------- hash router: every tab is its own page ---------- */
@@ -2061,6 +2061,11 @@
     if(v==="cal")v="exams";   /* legacy link — calendar lives on the exams page */
     if(VIEW_KEYS.indexOf(v)<0)v="home";
     UI.view=v;
+    document.body.dataset.view=v;
+    /* the mobile header shows the current page's name on sub-pages */
+    var NAVKEY={home:"navOverview",exams:"navExams",due:"navDue",
+                sched:"navSched",stats:"navStats",setup:"navSet"};
+    document.getElementById("pageTitle").textContent=t(NAVKEY[v]);
     Array.prototype.forEach.call(document.querySelectorAll("[data-view]"),function(el){
       el.classList.toggle("view-off",el.dataset.view!==v);});
     Array.prototype.forEach.call(document.querySelectorAll("[data-nav]"),function(a){
