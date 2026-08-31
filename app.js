@@ -39,21 +39,96 @@
   };
   var COMMON={
     s5:["Bazat e Inteligjencës Artificiale","Sistemet e Ndërlidhura","Menaxhimi i Projekteve dhe Ndërmarrësia"],
-    s6:["Cloud Computing","Lënda Laboratorike 2 – Projekt Grupor"],
+    s6:["Cloud Computing","Lënda Laboratorike 2 – Projekt Grupor","Tema e Diplomës (Bachelor Thesis)"],
     e5:["Infrastruktura e Serverëve","Interneti i Gjërave (IoT)"],
     e6:["Orientimi në Karrierë, Komunikim dhe Zhvillim","Programimi i Lojërave"]
   };
-  /* every year-3 subject for a specialization, tagged by kind */
+  /* ECTS per year-3 subject (official curriculum structure);
+     specialization stream courses are 5 ECTS each */
+  var Y3_ECTS={
+    "Bazat e Inteligjencës Artificiale":5,"Sistemet e Ndërlidhura":5,
+    "Menaxhimi i Projekteve dhe Ndërmarrësia":5,
+    "Cloud Computing":4,"Lënda Laboratorike 2 – Projekt Grupor":5,
+    "Tema e Diplomës (Bachelor Thesis)":8,
+    "Infrastruktura e Serverëve":5,"Interneti i Gjërave (IoT)":5,
+    "Orientimi në Karrierë, Komunikim dhe Zhvillim":3,"Programimi i Lojërave":3
+  };
+  /* every year-3 subject, tagged by kind; spec streams only when chosen */
   function curriculum(k){
-    var sp=SPECS[k];if(!sp)return [];
+    var sp=SPECS[k]||null;
     var out=[];
-    COMMON.s5.forEach(function(n){out.push({name:n,sem:5,kind:"oblig"});});
-    sp.s5.forEach(function(n){out.push({name:n,sem:5,kind:"spec"});});
-    COMMON.e5.forEach(function(n){out.push({name:n,sem:5,kind:"elect"});});
-    COMMON.s6.forEach(function(n){out.push({name:n,sem:6,kind:"oblig"});});
-    sp.s6.forEach(function(n){out.push({name:n,sem:6,kind:"spec"});});
-    COMMON.e6.forEach(function(n){out.push({name:n,sem:6,kind:"elect"});});
+    function push(n,sem,kind){out.push({name:n,sem:sem,kind:kind,ects:Y3_ECTS[n]||5});}
+    COMMON.s5.forEach(function(n){push(n,5,"oblig");});
+    if(sp)sp.s5.forEach(function(n){push(n,5,"spec");});
+    COMMON.e5.forEach(function(n){push(n,5,"elect");});
+    COMMON.s6.forEach(function(n){push(n,6,"oblig");});
+    if(sp)sp.s6.forEach(function(n){push(n,6,"spec");});
+    COMMON.e6.forEach(function(n){push(n,6,"elect");});
     return out;
+  }
+
+  /* full CSE bachelor plan, years 1–2 — verified against the official
+     "Struktura e Programit" (ubt-uni.net) and the student's subject lists.
+     Each semester's obligatives total exactly 30 ECTS. */
+  var CSE_Y12=[
+    {name:"Hyrje në Shkenca Kompjuterike dhe Programim",sem:1,ects:5},
+    {name:"Matematikë 1",sem:1,ects:5},
+    {name:"Bazat e Inxhinierisë Elektronike / Elektrike",sem:1,ects:6},
+    {name:"Arkitektura dhe Organizimi i Kompjuterëve",sem:1,ects:5},
+    {name:"Shkrim Akademik dhe Seminar",sem:1,ects:5},
+    {name:"Gjuhë Angleze për Inxhinieri",sem:1,ects:4},
+    {name:"Gjuhë Gjermane",sem:1,ects:5,kind:"elect"},
+    {name:"Gjuhë Italiane",sem:1,ects:4,kind:"elect"},
+    {name:"Shkenca Kompjuterike 1",sem:2,ects:6},
+    {name:"Matematikë 2",sem:2,ects:5},
+    {name:"Sistemet Operative",sem:2,ects:5},
+    {name:"Qarqet Digjitale dhe Sinjalet",sem:2,ects:5},
+    {name:"Hyrje në Sigurinë e Informacionit",sem:2,ects:4},
+    {name:"Ndërveprimi Kompjuter-Njeri",sem:2,ects:5},
+    {name:"Shkenca Kompjuterike 2",sem:3,ects:6},
+    {name:"Sistemet e Bazës së të Dhënave",sem:3,ects:5},
+    {name:"Rrjeta Kompjuterike dhe Komunikimi",sem:3,ects:5},
+    {name:"Hyrje në Algoritme",sem:3,ects:4},
+    {name:"Strukturat Diskrete 1 (Matematikë)",sem:3,ects:5},
+    {name:"Dizajni dhe Zhvillimi i Uebit",sem:3,ects:5},
+    {name:"Bazat e Teknologjive Big Data",sem:4,ects:5},
+    {name:"Algoritmet dhe Strukturat e të Dhënave",sem:4,ects:5},
+    {name:"Strukturat Diskrete 2 (Probabilitet dhe Modelim)",sem:4,ects:4},
+    {name:"Sisteme dhe Sinjale",sem:4,ects:5},
+    {name:"Inxhinieria Softuerike",sem:4,ects:5},
+    {name:"Lënda Laboratorike 1 (Projekt Grupor)",sem:4,ects:6}
+  ];
+  /* year-gated CSE curriculum: year 1 → sem 1–2, year 2 → +sem 3–4,
+     year 3 → +the year-3 plan (streams once a specialization is chosen) */
+  function cseCurriculum(year,spec){
+    var out=[];
+    CSE_Y12.forEach(function(c){
+      if(Math.ceil(c.sem/2)<=year)
+        out.push({name:c.name,sem:c.sem,ects:c.ects,kind:c.kind||"oblig"});
+    });
+    if(year>=3)out=out.concat(curriculum(spec));
+    return out;
+  }
+
+  /* tolerant course-name matching, so "Big Data" equals
+     "Bazat e Teknologjive Big Data" and definite forms
+     ("Sistemet dhe Sinjalet" vs "Sisteme dhe Sinjale") agree */
+  function normName(s){
+    s=String(s||"").toLowerCase()
+      .replace(/\(.*?\)/g," ")
+      .replace(/ueb/g,"web")
+      .replace(/[^a-z0-9ëç]+/g," ");
+    return s.split(" ").filter(Boolean)
+      .map(function(w){return w.length>3?w.replace(/t$/,""):w;})
+      .join(" ");
+  }
+  function nameMatch(a,b){
+    a=normName(a);b=normName(b);
+    if(!a||!b)return false;
+    if(a===b)return true;
+    if(a.length>=8&&b.indexOf(a)>=0)return true;
+    if(b.length>=8&&a.indexOf(b)>=0)return true;
+    return false;
   }
 
   /* ---------- weekly schedule: what's on now, what's next ----------
@@ -347,7 +422,7 @@
   function seedData(){
     return {
       profile:{name:"",baseCount:0,baseAvg:0,targetMin:8,targetMax:9,totalCourses:24,
-               baseEcts:0,baseAvgW:0,uniEmail:"",uniId:"",year:1,spec:""},
+               baseEcts:0,baseAvgW:0,uniEmail:"",uniId:"",year:1,spec:"",major:""},
       pool:[],
       completed:[],
       sessions:[
@@ -388,9 +463,12 @@
     if(!d||typeof d!=="object")return seedData();
     d.profile=d.profile||{};
     var p=d.profile,s=seedData().profile;
-    ["name","uniEmail","uniId","spec"].forEach(function(k){
+    ["name","uniEmail","uniId","spec","major"].forEach(function(k){
       if(typeof p[k]!=="string")p[k]=p[k]!=null?String(p[k]):(s[k]||"");});
     if(!SPECS[p.spec])p.spec="";
+    if(p.major!=="cse")p.major="";
+    /* stored data from before the major field: a chosen spec implies CSE */
+    if(!p.major&&p.spec)p.major="cse";
     ["baseCount","baseAvg","targetMin","targetMax","totalCourses","baseEcts","baseAvgW","year"].forEach(function(k){
       p[k]=isFinite(+p[k])?+p[k]:s[k];});
     d.schedule=(d.schedule||[]).filter(function(en){
@@ -505,7 +583,9 @@
     unfinished:unfinished,running:running,
     targetRows:targetRows,reckonerRows:reckonerRows,monthsSpanned:monthsSpanned,
     weightedAvg:weightedAvg,trendPoints:trendPoints,deriveBase:deriveBase,
-    SPECS:SPECS,COMMON:COMMON,curriculum:curriculum,schedNow:schedNow,toMin:toMin,
+    SPECS:SPECS,COMMON:COMMON,curriculum:curriculum,
+    CSE_Y12:CSE_Y12,cseCurriculum:cseCurriculum,normName:normName,nameMatch:nameMatch,
+    schedNow:schedNow,toMin:toMin,
     DUE_TYPES:DUE_TYPES,dueWhen:dueWhen,dueSplit:dueSplit,buildDueICS:buildDueICS,
     buildICS:buildICS,seedData:seedData,normalise:normalise,importAny:importAny};
   root.TrackerCore=CORE;
@@ -595,6 +675,15 @@
     lblEcts:"ECTS completed",lblAvgW:"Weighted average (optional)",ectsPh:"ECTS",
     shareB:"📤 Share backup",startPoint:"start",
     lblUniEmail:"Uni email",lblUniId:"Student ID",lblYear:"Year of studies",lblSpec:"Specialization",
+    lblMajor:"Major / program",majorNone:"— other program (add subjects manually)",
+    majorCse:"Shkenca Kompjuterike dhe Inxhinieri · CSE",
+    semLbl:"Semester {n}",
+    curricH:"Official CSE curriculum — up to year {n}",
+    curricSub:"Tick subjects, then send them where they belong: exams you still owe → the pool; exams you've passed → completed courses. Semesters stay editable afterwards, so you can move a subject if the plan shifts.",
+    toPool:"→ exam pool",toPassed:"→ passed courses",
+    inPassed:"✓ already passed",
+    gradeNote:"Added with grade 8 as a placeholder — open “Completed courses” and set the real grades.",
+    pickSpecFirst:"Choose a specialization above to see the year-3 stream subjects too.",
     phUniEmail:"name.surname@ubt-uni.net",phUniId:"e.g. 22-123-456",
     specNone:"— not chosen yet",yearOpt:"Year {n}",
     specPanelH:"Year-3 curriculum — {s}",
@@ -717,6 +806,15 @@
     lblEcts:"ECTS të përfunduara",lblAvgW:"Mesatarja me peshë (ops.)",ectsPh:"ECTS",
     shareB:"📤 Ndaje kopjen",startPoint:"fillimi",
     lblUniEmail:"Email-i i UBT-së",lblUniId:"ID e studentit",lblYear:"Viti i studimeve",lblSpec:"Specializimi",
+    lblMajor:"Drejtimi / programi",majorNone:"— program tjetër (lëndët shtohen manualisht)",
+    majorCse:"Shkenca Kompjuterike dhe Inxhinieri · CSE",
+    semLbl:"Semestri {n}",
+    curricH:"Plani zyrtar i CSE-së — deri në vitin {n}",
+    curricSub:"Shënoji lëndët dhe çoji ku duhet: provimet që t'kanë mbetur → në listë; ato që i ke kaluar → te të përfunduarat. Semestrat mbeten të ndryshueshëm më vonë, po lëvizi lëndët nëse ndryshon plani.",
+    toPool:"→ lista e provimeve",toPassed:"→ lëndët e kaluara",
+    inPassed:"✓ e kaluar tashmë",
+    gradeNote:"U shtuan me notën 8 si vendmbajtëse — hape “Lëndët e përfunduara” dhe vendosi notat e vërteta.",
+    pickSpecFirst:"Zgjidhe specializimin më lart që të shfaqen edhe lëndët e vitit 3.",
     phUniEmail:"emri.mbiemri@ubt-uni.net",phUniId:"p.sh. 22-123-456",
     specNone:"— ende pa zgjedhur",yearOpt:"Viti {n}",
     specPanelH:"Plani i vitit 3 — {s}",
@@ -1474,7 +1572,7 @@
     document.getElementById("setTmax").value=p.targetMax;
     document.getElementById("setTotal").value=p.totalCourses;
     document.getElementById("setEcts").value=p.baseEcts||"";
-    document.getElementById("setAvgW").value=p.baseAvgW||"";
+    document.getElementById("setAvgW").value=p.baseAvgW?n2(p.baseAvgW):"";
     /* the transcript, when present, owns the base numbers */
     var derived=!!DATA.completed.length;
     ["setCount","setAvg","setEcts","setAvgW"].forEach(function(id){
@@ -1484,66 +1582,108 @@
     if(derived)dn.textContent=t("fromTranscript",{n:DATA.completed.length});
     document.getElementById("setUniEmail").value=p.uniEmail||"";
     document.getElementById("setUniId").value=p.uniId||"";
+    var ms=document.getElementById("setMajor");ms.innerHTML="";
+    [["",t("majorNone")],["cse",t("majorCse")]].forEach(function(pair){
+      var o=document.createElement("option");o.value=pair[0];o.textContent=pair[1];
+      if(p.major===pair[0])o.selected=true;ms.appendChild(o);});
     var ys=document.getElementById("setYear");ys.innerHTML="";
     [1,2,3].forEach(function(y){
       var o=document.createElement("option");o.value=y;o.textContent=t("yearOpt",{n:y});
-      if((p.year||3)===y)o.selected=true;ys.appendChild(o);});
+      if((p.year||1)===y)o.selected=true;ys.appendChild(o);});
     var ss=document.getElementById("setSpec");ss.innerHTML="";
     var o0=document.createElement("option");o0.value="";o0.textContent=t("specNone");ss.appendChild(o0);
     Object.keys(SPECS).forEach(function(k){
       var o=document.createElement("option");o.value=k;
       o.textContent=SPECS[k].sq+" · "+SPECS[k].en;
       if(p.spec===k)o.selected=true;ss.appendChild(o);});
-    renderSpecPanel();
+    renderCurricPanel();
   }
 
-  /* year-3 curriculum picker: appears when a specialization + year 3 are set */
-  function renderSpecPanel(){
+  /* official CSE curriculum picker: subjects appear only up to the chosen
+     year, and each can be sent to the exam pool or straight to "passed" */
+  function renderCurricPanel(){
     var panel=document.getElementById("specPanel");
+    var major=document.getElementById("setMajor").value;
+    var year=+document.getElementById("setYear").value||1;
     var spec=document.getElementById("setSpec").value;
-    var year=+document.getElementById("setYear").value||0;
-    if(!spec||year<3||!SPECS[spec]){panel.hidden=true;panel.innerHTML="";return;}
+    /* the specialization row only matters for CSE year 3 */
+    document.getElementById("specRow").hidden=!(major==="cse"&&year>=3);
+    if(major!=="cse"){panel.hidden=true;panel.innerHTML="";return;}
     panel.hidden=false;panel.innerHTML="";
-    var h=document.createElement("h4");
-    h.innerHTML=t("specPanelH",{s:esc(SPECS[spec].sq)});
-    var sub=document.createElement("p");sub.className="set-hint";sub.textContent=t("specPanelSub");
+    var h=document.createElement("h4");h.textContent=t("curricH",{n:year});
+    var sub=document.createElement("p");sub.className="set-hint";sub.textContent=t("curricSub");
     panel.appendChild(h);panel.appendChild(sub);
-    var inPool={};DATA.pool.forEach(function(e){inPool[e.name.trim().toLowerCase()]=true;});
     var KIND={oblig:"kOblig",spec:"kSpec",elect:"kElect"};
-    var boxes=[];
-    curriculum(spec).forEach(function(it){
-      var had=!!inPool[it.name.trim().toLowerCase()];
+    var boxes=[],lastSem=0;
+    cseCurriculum(year,spec).forEach(function(it){
+      if(it.sem!==lastSem){
+        lastSem=it.sem;
+        var sh=document.createElement("div");sh.className="curric-sem";
+        sh.textContent=t("yearOpt",{n:Math.ceil(it.sem/2)})+" · "+t("semLbl",{n:it.sem});
+        panel.appendChild(sh);
+      }
+      var inPool=DATA.pool.some(function(e){return nameMatch(e.name,it.name);});
+      var passed=DATA.completed.some(function(c){return nameMatch(c.name,it.name);});
       var row=document.createElement("label");row.className="pick-row";
       var inp=document.createElement("input");inp.type="checkbox";
-      inp.checked=had||it.kind!=="elect";inp.disabled=had;
+      inp.checked=inPool||passed;inp.disabled=inPool||passed;
       var box=document.createElement("span");box.className="box";box.innerHTML=CHECK;
       var body=document.createElement("span");body.className="pick-body";
       body.innerHTML='<span class="pick-name">'+esc(it.name)+'</span>'
         +'<span class="pick-meta"><span class="sem-badge">'+esc(t("exSem"))+' '+it.sem+'</span>'
-        +'<span class="pick-note">'+esc(t(KIND[it.kind]))+'</span>'
-        +(had?'<span class="pick-date">✓ '+esc(t("inPool"))+'</span>':"")+'</span>';
+        +'<span class="sem-badge">'+it.ects+' ECTS</span>'
+        +(it.kind!=="oblig"?'<span class="pick-note">'+esc(t(KIND[it.kind]))+'</span>':"")
+        +(passed?'<span class="pick-date">'+esc(t("inPassed"))+'</span>'
+          :inPool?'<span class="pick-date">✓ '+esc(t("inPool"))+'</span>':"")+'</span>';
       row.appendChild(inp);row.appendChild(box);row.appendChild(body);
       panel.appendChild(row);
-      if(!had)boxes.push({inp:inp,it:it});
+      if(!inPool&&!passed)boxes.push({inp:inp,it:it});
     });
+    if(year>=3&&!spec){
+      var note=document.createElement("p");note.className="set-hint";
+      note.textContent=t("pickSpecFirst");panel.appendChild(note);
+    }
+    function keepChoices(){
+      DATA.profile.major=major;DATA.profile.spec=spec;DATA.profile.year=year;
+    }
     var act=document.createElement("div");act.className="set-actions";
-    var add=document.createElement("button");add.type="button";add.className="btn primary";
-    add.textContent=t("addSel");
-    add.addEventListener("click",function(){
+    var toPool=document.createElement("button");toPool.type="button";
+    toPool.className="btn primary";toPool.textContent=t("toPool");
+    toPool.addEventListener("click",function(){
       boxes.forEach(function(b){
         if(!b.inp.checked)return;
         DATA.pool.push({
           id:"c"+Date.now().toString(36)+Math.floor(Math.random()*1e4).toString(36),
-          name:b.it.name,sem:b.it.sem,ects:"",date:""});
+          name:b.it.name,sem:b.it.sem,ects:b.it.ects,date:""});
       });
-      /* the picker doubles as the spec/year form — keep those choices */
-      DATA.profile.spec=spec;DATA.profile.year=year;
-      save();buildAll();
+      keepChoices();save();buildAll();
     });
-    act.appendChild(add);panel.appendChild(act);
+    var toPassed=document.createElement("button");toPassed.type="button";
+    toPassed.className="btn";toPassed.textContent=t("toPassed");
+    toPassed.addEventListener("click",function(){
+      var n=0;
+      boxes.forEach(function(b){
+        if(!b.inp.checked)return;
+        DATA.completed.push({
+          id:"f"+Date.now().toString(36)+Math.floor(Math.random()*1e4).toString(36),
+          name:b.it.name,grade:8,ects:b.it.ects});
+        n++;
+      });
+      keepChoices();
+      deriveBase(DATA);
+      if(DATA.profile.totalCourses<DATA.profile.baseCount)
+        DATA.profile.totalCourses=DATA.profile.baseCount;
+      save();buildAll();
+      if(n){
+        document.getElementById("compBox").open=true;
+        alert(t("gradeNote"));
+      }
+    });
+    act.appendChild(toPool);act.appendChild(toPassed);panel.appendChild(act);
   }
-  document.getElementById("setSpec").addEventListener("change",renderSpecPanel);
-  document.getElementById("setYear").addEventListener("change",renderSpecPanel);
+  document.getElementById("setMajor").addEventListener("change",renderCurricPanel);
+  document.getElementById("setSpec").addEventListener("change",renderCurricPanel);
+  document.getElementById("setYear").addEventListener("change",renderCurricPanel);
   function compRow(c){
     var row=document.createElement("div");row.className="exam-row";
     row.dataset.id=c?c.id:("f"+Date.now().toString(36)+Math.floor(Math.random()*1e4).toString(36));
@@ -1673,8 +1813,9 @@
       parseInt(document.getElementById("setTotal").value,10)||p.baseCount);
     p.uniEmail=document.getElementById("setUniEmail").value.trim();
     p.uniId=document.getElementById("setUniId").value.trim();
-    p.year=+document.getElementById("setYear").value||3;
+    p.year=+document.getElementById("setYear").value||1;
     p.spec=document.getElementById("setSpec").value;
+    p.major=document.getElementById("setMajor").value;
     save();buildAll();
   });
 

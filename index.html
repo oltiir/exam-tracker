@@ -298,8 +298,9 @@ try{var _t=localStorage.getItem("ubt-theme");if(_t)document.documentElement.setA
           <label><span data-i18n="lblName">Your name</span><input id="setName" data-i18n-ph="phName" placeholder="e.g. Alex" autocomplete="off"></label>
           <label><span data-i18n="lblUniEmail">Uni email</span><input id="setUniEmail" type="email" data-i18n-ph="phUniEmail" placeholder="name.surname@ubt-uni.net" autocomplete="off"></label>
           <label><span data-i18n="lblUniId">Student ID</span><input id="setUniId" data-i18n-ph="phUniId" placeholder="e.g. 22-123-456" autocomplete="off"></label>
+          <label class="span2"><span data-i18n="lblMajor">Major / program</span><select id="setMajor"></select></label>
           <label><span data-i18n="lblYear">Year of studies</span><select id="setYear"></select></label>
-          <label class="span2"><span data-i18n="lblSpec">Specialization</span><select id="setSpec"></select></label>
+          <label class="span2" id="specRow"><span data-i18n="lblSpec">Specialization</span><select id="setSpec"></select></label>
           <label><span data-i18n="lblCount">Courses completed</span><input type="number" id="setCount" min="0" step="1" inputmode="numeric"></label>
           <label><span data-i18n="lblAvg">Current average</span><input type="number" id="setAvg" min="5" max="10" step="0.01" inputmode="decimal"></label>
           <label><span data-i18n="lblTotal">Total courses in degree</span><input type="number" id="setTotal" min="1" step="1" inputmode="numeric"></label>

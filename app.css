@@ -151,7 +151,7 @@ h1{font-family:var(--display);font-weight:600;font-size:25px;letter-spacing:-.01
 .onboard b{color:var(--ink)}
 .onboard .btn{margin-top:16px}
 .exam-row .f-grade{flex:0 0 72px}
-.set-body input:disabled{opacity:.55;background:var(--tint)}
+.set-body input:not([type=checkbox]):disabled{opacity:.55;background:var(--tint)}
 
 /* ---------- trend sparkline ---------- */
 .trend{padding:14px 18px 10px;margin-top:12px}
@@ -224,7 +224,7 @@ details.pick{margin-top:14px}
 .pick-body{display:flex;flex-direction:column;gap:2px;min-width:0}
 .pick-name{font-weight:600;font-size:13.5px;line-height:1.35}
 .pick-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.pick-date{font:500 11px var(--mono);color:var(--muted)}
+.pick-date{font:600 11px var(--mono);color:var(--muted)}
 .pick-note{font-size:11px;color:var(--accent);font-weight:600}
 
 /* ---------- badges ---------- */
@@ -384,10 +384,12 @@ textarea{font:inherit;resize:vertical}
 .tabbar a .nav-dot{top:7px;right:9px}
 .nav-dot[hidden]{display:none}
 
-/* ---------- specialization curriculum picker ---------- */
+/* ---------- curriculum picker ---------- */
 .spec-panel{margin-top:18px;border-top:1px dashed var(--hair);padding-top:6px}
 .spec-panel h4{font-family:var(--display);font-weight:600;font-size:13.5px;margin-top:12px}
 .spec-panel .pick-row{padding:9px 10px}
+.curric-sem{font:600 10.5px/1 var(--body);letter-spacing:.1em;text-transform:uppercase;
+  color:var(--faint);margin:16px 0 4px;padding-bottom:6px;border-bottom:1px solid var(--hair)}
 .set-grid label.span2{grid-column:span 2}
 
 /* ---------- calendar ---------- */
@@ -440,10 +442,10 @@ details.settings{margin-top:14px}
 .set-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:14px}
 .set-grid label{display:flex;flex-direction:column;gap:5px;font:600 10.5px/1.3 var(--body);
   letter-spacing:.07em;text-transform:uppercase;color:var(--faint)}
-.set-body input,.set-body textarea,.set-body select{font:400 15px var(--body);color:var(--ink);
+.set-body input:not([type=checkbox]),.set-body textarea,.set-body select{font:400 15px var(--body);color:var(--ink);
   border:1.5px solid var(--border);border-radius:var(--r-sm);padding:10px 12px;background:var(--surface);
   width:100%;transition:border-color .15s;-webkit-appearance:none;appearance:none}
-.set-body input:focus,.set-body textarea:focus,.set-body select:focus{border-color:var(--accent);outline:none}
+.set-body input:not([type=checkbox]):focus,.set-body textarea:focus,.set-body select:focus{border-color:var(--accent);outline:none}
 .exam-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;align-items:center}
 .exam-row .f-name{flex:3 1 150px;min-width:0}
 .exam-row .f-sem{flex:0 0 68px}
@@ -535,7 +537,7 @@ details.settings{margin-top:14px}
   .two-col{grid-template-columns:1fr}
   .grid{grid-template-columns:1fr}
   .set-grid{grid-template-columns:repeat(2,1fr)}
-  .set-body input,.set-body textarea,.set-body select{font-size:16px} /* prevents iOS focus zoom */
+  .set-body input:not([type=checkbox]),.set-body textarea,.set-body select{font-size:16px} /* prevents iOS focus zoom */
   /* compact one-row header: identity + toggles on the Overview page,
      just the current page's title everywhere else */
   .top{align-items:center;flex-wrap:nowrap;padding-bottom:12px;gap:10px;min-height:50px}
