@@ -152,7 +152,10 @@
   function targetRows(p){
     var bs=p.baseCount*p.baseAvg,T=p.totalCourses,rem=T-p.baseCount;
     var ceil=rem>0?(bs+10*rem)/T:p.baseAvg;
-    var cands=[p.baseAvg-0.75,p.targetMin,p.baseAvg,p.targetMax,ceil];
+    /* only grade-shaped targets: a blank profile has baseAvg 0, which would
+       otherwise produce nonsense rows */
+    var cands=[p.baseAvg-0.75,p.targetMin,p.baseAvg,p.targetMax,ceil]
+      .filter(function(t){return t>=5&&t<=10;});
     var rows=[],seen={};
     cands.sort(function(a,b){return a-b;}).forEach(function(t){
       var disp=n2(t);if(seen[disp])return;seen[disp]=1;
@@ -209,7 +212,7 @@
     });
     items.sort(function(a,b){return a.t-b.t;});
     var sum=profile.baseCount*profile.baseAvg,n=profile.baseCount;
-    var pts=[{avg:n?sum/n:0,name:null,g:null}];
+    var pts=n>0?[{avg:sum/n,name:null,g:null}]:[];
     items.forEach(function(it){sum+=it.g;n++;pts.push({avg:sum/n,name:it.name,g:it.g});});
     return pts;
   }
@@ -337,29 +340,18 @@
     return lines.join("\r\n");
   }
 
-  /* ---------- seed & shape ---------- */
+  /* ---------- seed & shape ----------
+     The seed is deliberately NEUTRAL: this is a public static site, so a
+     first-time visitor gets a blank tracker with only the institutional
+     sitting periods. Personal data enters through Set up or Import only. */
   function seedData(){
     return {
-      profile:{name:"Giorno",baseCount:12,baseAvg:8.75,targetMin:8.5,targetMax:9.0,totalCourses:24,
-               baseEcts:61,baseAvgW:8.8,uniEmail:"",uniId:"",year:3,spec:""},
-      pool:[
-        {id:"os",       name:"Sistemet Operative",                    sem:2,date:"10.09.2026"},
-        {id:"diskrete2",name:"Struktura Diskrete 2",                  sem:4,date:"11.09.2026"},
-        {id:"bigdata",  name:"Big Data",                              sem:4,date:"15.09.2026"},
-        {id:"algoritme",name:"Algoritme dhe Struktura e të Dhënave",  sem:4,date:"18.09.2026"},
-        {id:"shkenca2", name:"Shkenca Kompjuterike 2",                sem:3,date:"21.09.2026"},
-        {id:"sinjalet", name:"Sistemet dhe Sinjalet",                 sem:4,date:"22.09.2026"},
-        {id:"web",      name:"Dizajni dhe Zhvillimi i Webit",         sem:3,date:"23.09.2026"},
-        {id:"mat2",     name:"Matematikë 2",                          sem:2,date:"24.09.2026"},
-        {id:"hyrjealg", name:"Hyrje në Algoritme",                    sem:3,date:"25.09.2026"},
-        {id:"db",       name:"Sistemet e Bazës së të Dhënave",        sem:3,date:"28.09.2026"},
-        {id:"diskrete1",name:"Struktura Diskrete 1",                  sem:3,date:"30.09.2026"},
-        {id:"mat1",     name:"Matematikë 1",                          sem:1,date:"01.10.2026"}
-      ],
+      profile:{name:"",baseCount:0,baseAvg:0,targetMin:8,targetMax:9,totalCourses:24,
+               baseEcts:0,baseAvgW:0,uniEmail:"",uniId:"",year:1,spec:""},
+      pool:[],
+      completed:[],
       sessions:[
-        {id:"s-2026-9",label:"September 2026",year:2026,month:9,entries:
-          ["diskrete2","bigdata","algoritme","shkenca2","hyrjealg","db"].map(function(id){
-            return {examId:id,slot:"13:00–14:30"};})},
+        {id:"s-2026-9",label:"September 2026",year:2026,month:9,entries:[]},
         {id:"s-2026-11",label:"November 2026",year:2026,month:11,entries:[]},
         {id:"s-2027-1",label:"January 2027",year:2027,month:1,entries:[]},
         {id:"s-2027-4",label:"April 2027",year:2027,month:4,entries:[]},
@@ -369,6 +361,20 @@
       ],
       results:{},prep:{},schedule:[],due:[],v:2
     };
+  }
+  /* when a transcript exists, the base numbers are computed from it */
+  function deriveBase(d){
+    var c=d.completed||[];
+    if(!c.length)return;
+    var p=d.profile,sum=0;
+    c.forEach(function(r){sum+=r.grade;});
+    p.baseCount=c.length;
+    p.baseAvg=sum/c.length;
+    if(c.some(function(r){return r.ects!==""&&r.ects!=null;})){
+      var es=0,gs=0;
+      c.forEach(function(r){var e=+r.ects||5;es+=e;gs+=r.grade*e;});
+      p.baseEcts=es;p.baseAvgW=gs/es;
+    }
   }
   /* sessions added in later versions, folded into older stored data once */
   var MIGRATE_SESSIONS=[
@@ -392,6 +398,14 @@
     d.schedule.forEach(function(en){
       en.day=+en.day;en.start=String(en.start);en.end=en.end?String(en.end):"";
       en.name=String(en.name);en.room=en.room?String(en.room):"";});
+    d.completed=(d.completed||[]).filter(function(r){
+      return r&&r.name&&isFinite(+r.grade)&&+r.grade>=6&&+r.grade<=10;});
+    d.completed.forEach(function(r){
+      if(!r.id)r.id="f"+Math.random().toString(36).slice(2,9);
+      r.name=String(r.name);r.grade=+r.grade;
+      r.ects=r.ects!==""&&r.ects!=null&&isFinite(+r.ects)?+r.ects:"";});
+    deriveBase(d);
+    if(p.totalCourses<p.baseCount)p.totalCourses=p.baseCount;
     d.due=(d.due||[]).filter(function(it){return it&&it.id&&it.title;});
     d.due.forEach(function(it){
       it.title=String(it.title);
@@ -456,7 +470,12 @@
         name:op.name||"",baseCount:+op.baseCount||0,baseAvg:+op.baseAvg||8,
         targetMin:+op.targetMin||8,targetMax:+op.targetMax||8.5,
         totalCourses:+op.totalCourses||(+op.baseCount||0)},
-      pool:[],sessions:[],results:{},prep:{}};
+      pool:[],sessions:[],results:{},prep:{},completed:[]};
+    /* old exports carried the transcript as [name, ects, grade, letter] rows */
+    (op.completed||[]).forEach(function(r,i){
+      if(r&&r[0]&&isFinite(+r[2]))
+        d.completed.push({id:"f"+i,name:String(r[0]),grade:+r[2],ects:+r[1]||""});
+    });
     var seen={};
     (op.sessions||[]).forEach(function(sn){
       var per=OLD_PERIODS[sn.period]||OLD_PERIODS.sep;
@@ -485,7 +504,7 @@
     isPassed:isPassed,isFailed:isFailed,attempts:attempts,nthTry:nthTry,
     unfinished:unfinished,running:running,
     targetRows:targetRows,reckonerRows:reckonerRows,monthsSpanned:monthsSpanned,
-    weightedAvg:weightedAvg,trendPoints:trendPoints,
+    weightedAvg:weightedAvg,trendPoints:trendPoints,deriveBase:deriveBase,
     SPECS:SPECS,COMMON:COMMON,curriculum:curriculum,schedNow:schedNow,toMin:toMin,
     DUE_TYPES:DUE_TYPES,dueWhen:dueWhen,dueSplit:dueSplit,buildDueICS:buildDueICS,
     buildICS:buildICS,seedData:seedData,normalise:normalise,importAny:importAny};
@@ -550,7 +569,7 @@
     rrCap:"Ready-reckoner — {n} pending in {s}",
     thIf:"If grades average",thNew:"Your new average",thVs:"vs waterline",
     rrFormula:"Live base: <code>{c}</code> passing grades, sum <code>{s}</code>, average <code>{a}</code>",
-    setupHint:"pool → sessions → details",
+    setupHint:"finished → pool → sessions → details",
     poolSum:"Exam pool — everything you still have to sit",poolBadge:"{n} exams · {m} open",
     poolHint:"Name · semester · date as <b>dd.mm.yyyy</b> (places it on the calendar). Removing an exam here also removes its grade and session entries.",
     addPool:"+ Add exam",savePool:"Save pool",
@@ -610,6 +629,16 @@
     nextDueLbl:"Next due",moreOpen:"+{n} more open",
     dueIcs:"📅 Add deadlines to calendar",
     generalW:"— general",
+    compSum:"Completed courses — what you've already passed",
+    compHint:"Name · grade · ECTS (optional). Your starting average, course count and ECTS are computed from these rows.",
+    addComp:"+ Add course",saveComp:"Save courses",
+    compBadge:"{n} courses · avg {a}",
+    fromTranscript:"Course count, average and ECTS are computed from the {n} completed courses above.",
+    noBaseYet:"add your finished courses in Set up to start",
+    kn0:"Start in Set up: add the courses you've already passed and the exams you still owe — everything else fills in by itself.",
+    welcomeLede:"Your private exam planner — everything stays on this device.",
+    onboardMsg:"<b>Welcome!</b> This tracker is all yours — nothing you enter leaves this device. Start in <b>Set up</b>: ① add the courses you've already passed, ② add the exams you still have to sit, ③ tick them into a session.",
+    onboardCta:"Open Set up",
     footNotes:"Averages assume a simple (unweighted) mean of passed course grades, matching how UBT displays the transcript average — failed sittings don't enter it, the course simply stays in your pool. Exam dates come from the official “Orari i Provimeve — Shtator 2026”; which Dukagjini time window applies depends on the professor, so always confirm your section and campus before each exam. Use Export to back up or move your data between devices."
   },
   sq:{
@@ -659,7 +688,7 @@
     rrCap:"Llogaritësi — {n} në pritje në {s}",
     thIf:"Nëse notat mesatarisht",thNew:"Mesatarja e re",thVs:"ndaj vijës",
     rrFormula:"Baza live: <code>{c}</code> nota kaluese, shuma <code>{s}</code>, mesatarja <code>{a}</code>",
-    setupHint:"lista → sesionet → detajet",
+    setupHint:"të kryerat → lista → sesionet → detajet",
     poolSum:"Lista e provimeve — gjithçka që ende s'e ke dhënë",poolBadge:"{n} provime · {m} të hapura",
     poolHint:"Emri · semestri · data si <b>dd.mm.yyyy</b> (e vendos në kalendar). Heqja e provimit këtu fshin edhe notën dhe regjistrimet e tij.",
     addPool:"+ Shto provim",savePool:"Ruaj listën",
@@ -719,6 +748,16 @@
     nextDueLbl:"Afati i radhës",moreOpen:"+{n} të tjera hapur",
     dueIcs:"📅 Shto afatet në kalendar",
     generalW:"— e përgjithshme",
+    compSum:"Lëndët e përfunduara — çka ke kaluar tashmë",
+    compHint:"Emri · nota · ECTS (ops.). Mesatarja fillestare, numri i lëndëve dhe ECTS llogariten nga këto rreshta.",
+    addComp:"+ Shto lëndë",saveComp:"Ruaj lëndët",
+    compBadge:"{n} lëndë · mes. {a}",
+    fromTranscript:"Numri i lëndëve, mesatarja dhe ECTS llogariten nga {n} lëndët e përfunduara më lart.",
+    noBaseYet:"shto lëndët e kryera te Cilësimet për të filluar",
+    kn0:"Fillo te Cilësimet: shto lëndët që i ke kaluar dhe provimet që t'kanë mbetur — gjithçka tjetër plotësohet vetë.",
+    welcomeLede:"Planifikuesi yt privat i provimeve — gjithçka mbetet në këtë pajisje.",
+    onboardMsg:"<b>Mirë se erdhe!</b> Ky gjurmues është krejt yti — asgjë që shkruan s'e lëshon këtë pajisje. Fillo te <b>Cilësimet</b>: ① shto lëndët që i ke kaluar, ② shto provimet që t'kanë mbetur, ③ zgjidhi në një sesion.",
+    onboardCta:"Hap Cilësimet",
     footNotes:"Mesataret llogariten si mesatare e thjeshtë (pa peshë) e notave kaluese, ashtu si e shfaq UBT-ja në transkriptë — provimet e dështuara nuk hyjnë fare, lënda thjesht mbetet në listë. Datat e provimeve vijnë nga “Orari i Provimeve — Shtator 2026” zyrtar; cili orar i Dukagjinit vlen varet nga profesori, prandaj gjithmonë konfirmoje seksionin dhe kampusin para çdo provimi. Përdor Eksporto për ta ruajtur ose bartur progresin mes pajisjeve."
   }};
   var LANG="en";
@@ -894,17 +933,26 @@
     var p=DATA.profile;
     document.getElementById("hTitle").textContent=
       p.name?p.name+"'s Exam Tracker":t("defaultTitle");
+    var blank=!DATA.pool.length&&!DATA.completed.length;
     var left=unfinished(DATA.pool,R()).length;
     var passed=DATA.pool.length-left;
+    var parts=[];
+    if(SPECS[p.spec])parts.push(SPECS[p.spec].sq);
+    if(p.baseCount)parts.push(p.baseCount+" "+t("coursesDone"));
+    if(passed)parts.push(passed+" "+t("passedHere"));
+    if(DATA.pool.length)parts.push(left+" "+t("leftIn"));
+    parts.push(t("aiming")+" "+nice(p.targetMin)+"–"+nice(p.targetMax));
     document.getElementById("hLede").textContent=
-      (SPECS[p.spec]?SPECS[p.spec].sq+" · ":"")
-      +p.baseCount+" "+t("coursesDone")+" · "+(passed?passed+" "+t("passedHere")+" · ":"")
-      +left+" "+t("leftIn")+" · "+t("aiming")+" "+nice(p.targetMin)+"–"+nice(p.targetMax);
-    document.getElementById("stBase").textContent=n2(p.baseAvg);
+      blank?t("welcomeLede"):parts.join(" · ");
+    /* first-run guide until anything personal exists */
+    var ob=document.getElementById("onboardCard");
+    ob.hidden=!blank;
+    document.getElementById("stBase").textContent=p.baseCount?n2(p.baseAvg):"–";
     document.getElementById("stTarget").textContent=nice(p.targetMin)+"–"+nice(p.targetMax);
-    document.getElementById("wlineLbl").textContent=n2(p.baseAvg);
     var span=0.45;
-    document.getElementById("gaugeScale").textContent=n2(p.baseAvg-span)+" – "+n2(p.baseAvg+span);
+    document.getElementById("wlineLbl").textContent=p.baseCount?n2(p.baseAvg):"–";
+    document.getElementById("gaugeScale").textContent=
+      p.baseCount?n2(p.baseAvg-span)+" – "+n2(p.baseAvg+span):"";
   }
 
   function buildYearBar(){
@@ -1285,20 +1333,29 @@
   function render(){
     var p=DATA.profile,run=running(p,R());
     var base=p.baseAvg,span=0.45,avg=run.avg;
-    var pct=Math.max(0,Math.min(1,(avg-(base-span))/(2*span)))*100;
-    var water=document.getElementById("water");
-    water.style.height=pct+"%";
-    var above=avg>base+1e-9,below=avg<base-1e-9;
-    water.style.background=above?"linear-gradient(180deg,#8fc49a,#4f7d5c)"
-      :below?"linear-gradient(180deg,#dc9484,#b4483d)"
-      :"linear-gradient(180deg,#7fb6bd,#4f8b94)";
     var val=document.getElementById("avgVal");
-    val.textContent=n2(avg);
-    val.style.color=above?"var(--good)":below?"var(--bad)":"var(--ink)";
-    var d=document.getElementById("avgDelta"),diff=avg-base;
-    if(Math.abs(diff)<1e-9){d.textContent=t("atWater");d.style.color="var(--muted)";}
-    else if(diff>0){d.textContent="▲ +"+diff.toFixed(2)+" "+t("above")+" "+n2(base);d.style.color="var(--good)";}
-    else{d.textContent="▼ −"+Math.abs(diff).toFixed(2)+" "+t("below")+" "+n2(base);d.style.color="var(--bad)";}
+    var d=document.getElementById("avgDelta");
+    var water=document.getElementById("water");
+    if(run.count===0){
+      /* nothing to average yet — calm empty state instead of a red 0.00 */
+      val.textContent="–";val.style.color="var(--ink)";
+      d.textContent=t("noBaseYet");d.style.color="var(--muted)";
+      water.style.height="8%";
+      water.style.background="linear-gradient(180deg,#7fb6bd,#4f8b94)";
+    }else{
+      var pct=Math.max(0,Math.min(1,(avg-(base-span))/(2*span)))*100;
+      water.style.height=pct+"%";
+      var above=avg>base+1e-9,below=avg<base-1e-9;
+      water.style.background=above?"linear-gradient(180deg,#8fc49a,#4f7d5c)"
+        :below?"linear-gradient(180deg,#dc9484,#b4483d)"
+        :"linear-gradient(180deg,#7fb6bd,#4f8b94)";
+      val.textContent=n2(avg);
+      val.style.color=above?"var(--good)":below?"var(--bad)":"var(--ink)";
+      var diff=avg-base;
+      if(Math.abs(diff)<1e-9){d.textContent=t("atWater");d.style.color="var(--muted)";}
+      else if(diff>0){d.textContent="▲ +"+diff.toFixed(2)+" "+t("above")+" "+n2(base);d.style.color="var(--good)";}
+      else{d.textContent="▼ −"+Math.abs(diff).toFixed(2)+" "+t("below")+" "+n2(base);d.style.color="var(--bad)";}
+    }
 
     var sn=cur(),list=sessionExams(sn);
     var passed=0,sat=0,prepDone=0;
@@ -1324,10 +1381,12 @@
     var tt=targetRows(p);
     var wAvg=weightedAvg(p,DATA.pool,R());
     document.getElementById("keynums").innerHTML=
-      '<span>'+t("kn1",{x:n2(base)})+'</span>'
-      +'<span>'+t("kn2",{x:n2(tt.ceil)})+'</span>'
-      +(pend?'<span>'+t("kn3",{n:pend,x:n2(all9)})+'</span>':"")
-      +(wAvg!=null?'<span>'+t("knW",{x:n2(wAvg)})+'</span>':"");
+      (run.count===0&&!DATA.pool.length)
+      ?'<span>'+t("kn0")+'</span>'
+      :'<span>'+t("kn1",{x:n2(base)})+'</span>'
+        +'<span>'+t("kn2",{x:n2(tt.ceil)})+'</span>'
+        +(pend?'<span>'+t("kn3",{n:pend,x:n2(all9)})+'</span>':"")
+        +(wAvg!=null?'<span>'+t("knW",{x:n2(wAvg)})+'</span>':"");
 
     list.forEach(function(item){
       var ex=item.ex,r=R()[ex.id];
@@ -1385,6 +1444,11 @@
   document.getElementById("customizeBtn").addEventListener("click",openSetup);
 
   function buildSetup(){
+    /* completed-courses editor */
+    var cr=document.getElementById("compRows");cr.innerHTML="";
+    DATA.completed.forEach(function(c){cr.appendChild(compRow(c));});
+    document.getElementById("compBadge").textContent=DATA.completed.length
+      ?t("compBadge",{n:DATA.completed.length,a:n2(DATA.profile.baseAvg)}):"";
     /* pool editor */
     var pr=document.getElementById("poolRows");pr.innerHTML="";
     DATA.pool.forEach(function(ex){pr.appendChild(poolRow(ex));});
@@ -1403,6 +1467,13 @@
     document.getElementById("setTotal").value=p.totalCourses;
     document.getElementById("setEcts").value=p.baseEcts||"";
     document.getElementById("setAvgW").value=p.baseAvgW||"";
+    /* the transcript, when present, owns the base numbers */
+    var derived=!!DATA.completed.length;
+    ["setCount","setAvg","setEcts","setAvgW"].forEach(function(id){
+      document.getElementById(id).disabled=derived;});
+    var dn=document.getElementById("derivedNote");
+    dn.hidden=!derived;
+    if(derived)dn.textContent=t("fromTranscript",{n:DATA.completed.length});
     document.getElementById("setUniEmail").value=p.uniEmail||"";
     document.getElementById("setUniId").value=p.uniId||"";
     var ys=document.getElementById("setYear");ys.innerHTML="";
@@ -1465,6 +1536,23 @@
   }
   document.getElementById("setSpec").addEventListener("change",renderSpecPanel);
   document.getElementById("setYear").addEventListener("change",renderSpecPanel);
+  function compRow(c){
+    var row=document.createElement("div");row.className="exam-row";
+    row.dataset.id=c?c.id:("f"+Date.now().toString(36)+Math.floor(Math.random()*1e4).toString(36));
+    var n=document.createElement("input");n.className="f-name";n.placeholder=t("exName");
+    n.value=c?c.name:"";
+    var g=document.createElement("select");g.className="mon f-grade";
+    [6,7,8,9,10].forEach(function(gr){
+      var o=document.createElement("option");o.value=gr;o.textContent=gr;
+      if(c&&c.grade===gr)o.selected=true;g.appendChild(o);});
+    var ec=document.createElement("input");ec.className="f-sem";ec.type="number";ec.min=1;ec.max=30;
+    ec.placeholder=t("ectsPh");if(c&&c.ects)ec.value=c.ects;
+    var x=document.createElement("button");x.type="button";x.textContent="✕";x.title=t("removeExam");
+    x.addEventListener("click",function(){row.remove();});
+    row.appendChild(n);row.appendChild(g);row.appendChild(ec);row.appendChild(x);
+    return row;
+  }
+
   function poolRow(ex){
     var row=document.createElement("div");row.className="exam-row";
     row.dataset.id=ex?ex.id:("x"+Date.now().toString(36)+Math.floor(Math.random()*1e4).toString(36));
@@ -1480,6 +1568,27 @@
     row.appendChild(n);row.appendChild(sm);row.appendChild(ec);row.appendChild(dt);row.appendChild(x);
     return row;
   }
+  document.getElementById("addComp").addEventListener("click",function(){
+    document.getElementById("compRows").appendChild(compRow(null));});
+  document.getElementById("saveComp").addEventListener("click",function(){
+    var next=[];
+    Array.prototype.forEach.call(document.querySelectorAll("#compRows .exam-row"),function(row){
+      var ins=row.querySelectorAll("input");   /* name, ects */
+      var name=ins[0].value.trim();if(!name)return;
+      next.push({id:row.dataset.id,name:name,
+        grade:+row.querySelector("select").value||6,
+        ects:ins[1].value?+ins[1].value:""});
+    });
+    DATA.completed=next;
+    deriveBase(DATA);
+    if(DATA.profile.totalCourses<DATA.profile.baseCount)
+      DATA.profile.totalCourses=DATA.profile.baseCount;
+    save();buildAll();
+  });
+  document.getElementById("onboardBtn").addEventListener("click",function(){
+    location.hash="#/setup";
+    document.getElementById("compBox").open=true;
+  });
   document.getElementById("addPool").addEventListener("click",function(){
     document.getElementById("poolRows").appendChild(poolRow(null));});
   document.getElementById("savePool").addEventListener("click",function(){
@@ -1543,15 +1652,17 @@
   document.getElementById("saveDetails").addEventListener("click",function(){
     var p=DATA.profile;
     p.name=document.getElementById("setName").value.trim();
-    p.baseCount=Math.max(0,parseInt(document.getElementById("setCount").value,10)||0);
-    p.baseAvg=Math.min(10,Math.max(5,parseFloat(document.getElementById("setAvg").value)||8));
-    p.targetMin=parseFloat(document.getElementById("setTmin").value)||p.baseAvg;
+    if(!DATA.completed.length){   /* manual base only while no transcript */
+      p.baseCount=Math.max(0,parseInt(document.getElementById("setCount").value,10)||0);
+      p.baseAvg=Math.min(10,Math.max(0,parseFloat(document.getElementById("setAvg").value)||0));
+      p.baseEcts=Math.max(0,parseFloat(document.getElementById("setEcts").value)||0);
+      p.baseAvgW=parseFloat(document.getElementById("setAvgW").value)||0;
+    }
+    p.targetMin=parseFloat(document.getElementById("setTmin").value)||p.baseAvg||8;
     p.targetMax=parseFloat(document.getElementById("setTmax").value)||p.targetMin;
     if(p.targetMax<p.targetMin){var t2=p.targetMin;p.targetMin=p.targetMax;p.targetMax=t2;}
     p.totalCourses=Math.max(p.baseCount,
       parseInt(document.getElementById("setTotal").value,10)||p.baseCount);
-    p.baseEcts=Math.max(0,parseFloat(document.getElementById("setEcts").value)||0);
-    p.baseAvgW=parseFloat(document.getElementById("setAvgW").value)||0;
     p.uniEmail=document.getElementById("setUniEmail").value.trim();
     p.uniId=document.getElementById("setUniId").value.trim();
     p.year=+document.getElementById("setYear").value||3;

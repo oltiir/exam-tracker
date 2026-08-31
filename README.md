@@ -24,6 +24,7 @@ depends on how many courses you have already banked. This makes that visible
 
 | | |
 |---|---|
+| 🎓 **Transcript in, base out** | Enter your already-passed courses once (name · grade · ECTS) and the starting average, course count and weighted base are derived — no manual arithmetic. |
 | 🧺 **One exam pool** | Every course you still have to sit lives in a single master list — name, semester, official date. Enter it once. |
 | 🎯 **Sessions draw from it** | A session (September 2026, January 2027, …) is just a set of ticks against the pool. Change your mind by unticking — nothing is retyped. |
 | ✅ **Pass leaves the pool** | Grade 6+ removes the exam from every picker for good. A 5 keeps it in the pool flagged **retake**, ready to tick into a later session. |
@@ -90,11 +91,11 @@ Everything you enter lives in that browser's `localStorage`. There is no
 account, no server and no analytics — nothing you type leaves the device, and
 nobody else opening the link sees any of it.
 
-The app ships pre-seeded with the 12 remaining courses from the official
-"Orari i Provimeve — Shtator 2026", a September 2026 session already planned,
-and every sitting period through November 2027 (September/November 2026,
-January/April/June–July/September/November 2027). Open **Set up** to edit the
-pool, the sessions or your details.
+A first-time visitor gets a **blank tracker** — no one's courses, grades or
+name — with only the institutional sitting periods through November 2027
+pre-listed and a short first-run guide. Start in **Set up**: add the courses
+you've already passed (your starting average, course count and ECTS are
+computed from them), then the exams you still have to sit.
 
 > [!IMPORTANT]
 > This is a public static site, so anything committed to `app.js` is
