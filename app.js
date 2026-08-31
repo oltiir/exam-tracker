@@ -268,6 +268,18 @@
     return w?sum/w:null;
   }
 
+  /* ECTS banked so far: transcript base + every passed pool exam */
+  function earnedEcts(profile,pool,results){
+    var sum=+profile.baseEcts||0;
+    var byId=poolIndex(pool);
+    Object.keys(results||{}).forEach(function(k){
+      var r=results[k];if(!isPassed(r))return;
+      var ex=byId[k];if(!ex)return;
+      sum+=+ex.ects||5;
+    });
+    return sum;
+  }
+
   /* running average after each passing grade, in exam-date order —
      the data behind the trend sparkline */
   function trendPoints(profile,pool,results,sessions){
@@ -418,7 +430,7 @@
   function seedData(){
     return {
       profile:{name:"",baseCount:0,baseAvg:0,targetMin:8,targetMax:9,totalCourses:24,
-               baseEcts:0,baseAvgW:0,uniEmail:"",uniId:"",year:1,spec:"",major:""},
+               totalEcts:180,baseEcts:0,baseAvgW:0,uniEmail:"",uniId:"",year:1,spec:"",major:""},
       pool:[],
       completed:[],
       sessions:[
@@ -465,7 +477,7 @@
     if(p.major!=="cse")p.major="";
     /* stored data from before the major field: a chosen spec implies CSE */
     if(!p.major&&p.spec)p.major="cse";
-    ["baseCount","baseAvg","targetMin","targetMax","totalCourses","baseEcts","baseAvgW","year"].forEach(function(k){
+    ["baseCount","baseAvg","targetMin","targetMax","totalCourses","totalEcts","baseEcts","baseAvgW","year"].forEach(function(k){
       p[k]=isFinite(+p[k])?+p[k]:s[k];});
     d.schedule=(d.schedule||[]).filter(function(en){
       return en&&en.name&&toMin(en.start)!=null&&+en.day>=1&&+en.day<=7;});
@@ -578,7 +590,7 @@
     isPassed:isPassed,isFailed:isFailed,attempts:attempts,nthTry:nthTry,
     unfinished:unfinished,running:running,
     targetRows:targetRows,reckonerRows:reckonerRows,monthsSpanned:monthsSpanned,
-    weightedAvg:weightedAvg,trendPoints:trendPoints,deriveBase:deriveBase,
+    weightedAvg:weightedAvg,trendPoints:trendPoints,deriveBase:deriveBase,earnedEcts:earnedEcts,
     SPECS:SPECS,COMMON:COMMON,curriculum:curriculum,
     CSE_Y12:CSE_Y12,cseCurriculum:cseCurriculum,normName:normName,nameMatch:nameMatch,
     schedNow:schedNow,toMin:toMin,
@@ -645,7 +657,7 @@
     rrCap:"Ready-reckoner — {n} pending in {s}",
     thIf:"If grades average",thNew:"Your new average",thVs:"vs waterline",
     rrFormula:"Live base: <code>{c}</code> passing grades, sum <code>{s}</code>, average <code>{a}</code>",
-    setupHint:"finished → pool → sessions → details",
+    setupHint:"details → finished → pool → sessions",
     poolSum:"Exam pool — everything you still have to sit",poolBadge:"{n} exams · {m} open",
     poolHint:"Name · semester · date as <b>dd.mm.yyyy</b> (places it on the calendar). Removing an exam here also removes its grade and session entries.",
     addPool:"+ Add exam",savePool:"Save pool",
@@ -725,8 +737,11 @@
     noBaseYet:"add your finished courses in Set up to start",
     kn0:"Start in Set up: add the courses you've already passed and the exams you still owe — everything else fills in by itself.",
     welcomeLede:"Your private exam planner — everything stays on this device.",
-    onboardMsg:"<b>Welcome!</b> This tracker is all yours — nothing you enter leaves this device. Start in <b>Set up</b>: ① add the courses you've already passed, ② add the exams you still have to sit, ③ tick them into a session.",
+    onboardMsg:"<b>Welcome!</b> This tracker is all yours — nothing you enter leaves this device. Start in <b>Set up</b>: ① choose your major and year, ② add the courses you've already passed, ③ add the exams you still have to sit and tick them into a session.",
     onboardCta:"Open Set up",
+    nowClassLbl:"In class",nextClassLbl:"Next class",
+    degreeProgress:"Degree progress",lblTotalEcts:"Total ECTS in degree",
+    backupNudge:"{n} changes since your last backup — tap to export",
     footNotes:"Averages assume a simple (unweighted) mean of passed course grades, matching how UBT displays the transcript average — failed sittings don't enter it, the course simply stays in your pool. Exam dates come from the official “Orari i Provimeve — Shtator 2026”; which Dukagjini time window applies depends on the professor, so always confirm your section and campus before each exam. Use Export to back up or move your data between devices."
   },
   sq:{
@@ -776,7 +791,7 @@
     rrCap:"Llogaritësi — {n} në pritje në {s}",
     thIf:"Nëse notat mesatarisht",thNew:"Mesatarja e re",thVs:"ndaj vijës",
     rrFormula:"Baza live: <code>{c}</code> nota kaluese, shuma <code>{s}</code>, mesatarja <code>{a}</code>",
-    setupHint:"të kryerat → lista → sesionet → detajet",
+    setupHint:"detajet → të kryerat → lista → sesionet",
     poolSum:"Lista e provimeve — gjithçka që ende s'e ke dhënë",poolBadge:"{n} provime · {m} të hapura",
     poolHint:"Emri · semestri · data si <b>dd.mm.yyyy</b> (e vendos në kalendar). Heqja e provimit këtu fshin edhe notën dhe regjistrimet e tij.",
     addPool:"+ Shto provim",savePool:"Ruaj listën",
@@ -856,8 +871,11 @@
     noBaseYet:"shto lëndët e kryera te Cilësimet për të filluar",
     kn0:"Fillo te Cilësimet: shto lëndët që i ke kaluar dhe provimet që t'kanë mbetur — gjithçka tjetër plotësohet vetë.",
     welcomeLede:"Planifikuesi yt privat i provimeve — gjithçka mbetet në këtë pajisje.",
-    onboardMsg:"<b>Mirë se erdhe!</b> Ky gjurmues është krejt yti — asgjë që shkruan s'e lëshon këtë pajisje. Fillo te <b>Cilësimet</b>: ① shto lëndët që i ke kaluar, ② shto provimet që t'kanë mbetur, ③ zgjidhi në një sesion.",
+    onboardMsg:"<b>Mirë se erdhe!</b> Ky gjurmues është krejt yti — asgjë që shkruan s'e lëshon këtë pajisje. Fillo te <b>Cilësimet</b>: ① zgjidhe drejtimin dhe vitin, ② shto lëndët që i ke kaluar, ③ shto provimet që t'kanë mbetur dhe zgjidhi në një sesion.",
     onboardCta:"Hap Cilësimet",
+    nowClassLbl:"Në orë",nextClassLbl:"Ora e radhës",
+    degreeProgress:"Progresi i studimeve",lblTotalEcts:"ECTS gjithsej në studime",
+    backupNudge:"{n} ndryshime që nga kopja e fundit — prek për ta eksportuar",
     footNotes:"Mesataret llogariten si mesatare e thjeshtë (pa peshë) e notave kaluese, ashtu si e shfaq UBT-ja në transkriptë — provimet e dështuara nuk hyjnë fare, lënda thjesht mbetet në listë. Datat e provimeve vijnë nga “Orari i Provimeve — Shtator 2026” zyrtar; cili orar i Dukagjinit vlen varet nga profesori, prandaj gjithmonë konfirmoje seksionin dhe kampusin para çdo provimi. Përdor Eksporto për ta ruajtur ose bartur progresin mes pajisjeve."
   }};
   var LANG="en";
@@ -945,7 +963,14 @@
   var UI={session:null,view:"home"};   /* view state only — never persisted */
   var WHATIF=null;              /* sandbox overlay of results, or null */
 
-  function save(){if(!WHATIF)store.set(K,JSON.stringify(DATA));}
+  /* unbacked-up change counter, device-local — feeds the backup nudge */
+  function getDirty(){try{return +localStorage.getItem("ubt-dirty")||0;}catch(e){return 0;}}
+  function setDirty(n){try{localStorage.setItem("ubt-dirty",String(n));}catch(e){}}
+  function save(){
+    if(WHATIF)return;
+    store.set(K,JSON.stringify(DATA));
+    setDirty(getDirty()+1);
+  }
   function R(){return WHATIF?WHATIF.results:DATA.results;}
   function byId(){return poolIndex(DATA.pool);}
   function cur(){
@@ -1250,6 +1275,7 @@
           if(!WHATIF&&!same&&g>=6&&!wasPassed){
             var el=document.getElementById("card-"+ex.id);
             if(el)confetti(el);
+            try{if(navigator.vibrate)navigator.vibrate(35);}catch(e2){}
           }
         });
         gp.appendChild(pb);
@@ -1470,6 +1496,26 @@
     });
     document.getElementById("stCleared").textContent=passed+"/"+list.length;
     document.getElementById("stPool").textContent=unfinished(DATA.pool,R()).length;
+
+    /* degree ECTS progress */
+    var ec=document.getElementById("ectsCard");
+    var earned=earnedEcts(p,DATA.pool,R()),totalE=+p.totalEcts||0;
+    if(earned>0&&totalE>0){
+      ec.hidden=false;
+      var pctE=Math.min(100,earned/totalE*100);
+      ec.innerHTML='<div class="row"><b>'+esc(t("degreeProgress"))+'</b>'
+        +'<span>'+nice(earned)+' / '+nice(totalE)+' ECTS · '+Math.round(pctE)+'%</span></div>'
+        +'<span class="cap-track"><span class="cap-fill" style="width:'+pctE+'%"></span></span>';
+    }else{ec.hidden=true;ec.innerHTML="";}
+
+    /* quiet backup reminder once enough has changed */
+    var bn=document.getElementById("backupNudge");
+    var dirty=getDirty();
+    var hasData=DATA.pool.length||DATA.completed.length||DATA.schedule.length||DATA.due.length;
+    if(dirty>=15&&hasData){
+      bn.hidden=false;
+      bn.innerHTML='<span class="due-pin">💾</span><span>'+esc(t("backupNudge",{n:dirty}))+'</span>';
+    }else{bn.hidden=true;bn.innerHTML="";}
     var prepPct=list.length?Math.round(prepDone/(list.length*3)*100):0;
     document.getElementById("progMeta").textContent=
       sat+" / "+list.length+" "+t("satWord")
@@ -1569,6 +1615,7 @@
     document.getElementById("setTotal").value=p.totalCourses;
     document.getElementById("setEcts").value=p.baseEcts||"";
     document.getElementById("setAvgW").value=p.baseAvgW?n2(p.baseAvgW):"";
+    document.getElementById("setTotalEcts").value=p.totalEcts||"";
     /* the transcript, when present, owns the base numbers */
     var derived=!!DATA.completed.length;
     ["setCount","setAvg","setEcts","setAvgW"].forEach(function(id){
@@ -1731,7 +1778,7 @@
   });
   document.getElementById("onboardBtn").addEventListener("click",function(){
     location.hash="#/setup";
-    document.getElementById("compBox").open=true;
+    document.getElementById("detailsBox").open=true;   /* major & year first */
   });
   document.getElementById("addPool").addEventListener("click",function(){
     document.getElementById("poolRows").appendChild(poolRow(null));});
@@ -1807,6 +1854,7 @@
     if(p.targetMax<p.targetMin){var t2=p.targetMin;p.targetMin=p.targetMax;p.targetMax=t2;}
     p.totalCourses=Math.max(p.baseCount,
       parseInt(document.getElementById("setTotal").value,10)||p.baseCount);
+    p.totalEcts=Math.max(0,parseFloat(document.getElementById("setTotalEcts").value)||180);
     p.uniEmail=document.getElementById("setUniEmail").value.trim();
     p.uniId=document.getElementById("setUniId").value.trim();
     p.year=+document.getElementById("setYear").value||1;
@@ -1821,7 +1869,32 @@
     var h=Math.floor(min/60),m=min%60;
     return h+"h"+(m?" "+m+"m":"");
   }
+  /* compact "in class / next class" line on the Overview */
+  function renderSchedStrip(){
+    var strip=document.getElementById("schedStrip");
+    var sched=DATA.schedule||[];
+    if(!sched.length){strip.hidden=true;strip.innerHTML="";return;}
+    var r=schedNow(sched,new Date());
+    var html="";
+    if(r.current){
+      var ce=r.current.entry;
+      html='<span class="due-pin">🕰️</span><b>'+esc(t("nowClassLbl"))+':</b> '
+        +'<span class="due-strip-t">'+esc(ce.name)+'</span>'
+        +'<span class="contrib up">'+esc(t("endsIn",{x:fmtDur(r.current.endsIn)}))
+        +(ce.room?" · "+esc(ce.room):"")+'</span>';
+    }else if(r.next){
+      var ne=r.next.entry;
+      var when=r.next.inMin<1440?t("inX",{x:fmtDur(r.next.inMin)})
+        :LOC.DAYS[ne.day-1]+" · "+ne.start;
+      html='<span class="due-pin">🕰️</span><b>'+esc(t("nextClassLbl"))+':</b> '
+        +'<span class="due-strip-t">'+esc(ne.name)+'</span>'
+        +'<span class="contrib none">'+esc(when)+(ne.room?" · "+esc(ne.room):"")+'</span>';
+    }
+    strip.hidden=!html;
+    strip.innerHTML=html;
+  }
   function renderNow(){
+    renderSchedStrip();
     var card=document.getElementById("nowCard");
     var sched=DATA.schedule||[];
     if(!sched.length){
@@ -2101,6 +2174,8 @@
   });
   document.getElementById("dueStrip").addEventListener("click",function(){
     location.hash="#/due";});
+  document.getElementById("schedStrip").addEventListener("click",function(){
+    location.hash="#/sched";});
   document.getElementById("dueIcsBtn").addEventListener("click",function(){
     download("deadlines-"+slug(DATA.profile.name)+".ics",
       buildDueICS(DATA.due,t("nextDueLbl")+": "),"text/calendar;charset=utf-8");
@@ -2134,11 +2209,15 @@
       buildICS(sn,byId(),DATA.results,t("icsSummary")),
       "text/calendar;charset=utf-8");
   });
-  document.getElementById("exportBtn").addEventListener("click",function(){
+  function markBackedUp(){setDirty(0);render();}
+  function doExport(){
     download("exam-tracker-"+slug(DATA.profile.name)+".json",
       JSON.stringify({app:"ubt-exam-tracker",version:3,data:DATA},null,2),
       "application/json");
-  });
+    markBackedUp();
+  }
+  document.getElementById("exportBtn").addEventListener("click",doExport);
+  document.getElementById("backupNudge").addEventListener("click",doExport);
   /* share the backup via the OS share sheet where any share support exists;
      if file-sharing is refused, fall back to a plain download so the tap
      always produces the backup */
@@ -2151,9 +2230,10 @@
       var json=JSON.stringify({app:"ubt-exam-tracker",version:3,data:DATA},null,2);
       var file=null;
       try{file=new File([json],name,{type:"application/json"});}catch(e){}
-      var fallback=function(){download(name,json,"application/json");};
+      var fallback=function(){download(name,json,"application/json");markBackedUp();};
       if(file&&navigator.canShare&&navigator.canShare({files:[file]})){
         navigator.share({files:[file],title:"Exam tracker backup"})
+          .then(markBackedUp)
           .catch(function(err){if(!err||err.name!=="AbortError")fallback();});
       }else fallback();
     });
@@ -2170,7 +2250,7 @@
         exitWhatIf();
         DATA=next;
         UI.session=autoSelect(DATA.sessions,DATA.pool,NOW);
-        save();buildAll();
+        save();setDirty(0);buildAll();
       }catch(e){alert(t("badImport"));}
       ev.target.value="";
     };
@@ -2304,7 +2384,12 @@
                 sched:"navSched",stats:"navStats",setup:"navSet"};
     document.getElementById("pageTitle").textContent=t(NAVKEY[v]);
     Array.prototype.forEach.call(document.querySelectorAll("[data-view]"),function(el){
-      el.classList.toggle("view-off",el.dataset.view!==v);});
+      var show=el.dataset.view===v;
+      el.classList.toggle("view-off",!show);
+      /* retrigger the entrance animation on the sections coming in */
+      el.classList.remove("page-in");
+      if(show){void el.offsetWidth;el.classList.add("page-in");}
+    });
     Array.prototype.forEach.call(document.querySelectorAll("[data-nav]"),function(a){
       a.classList.toggle("on",a.dataset.nav===v);});
     var mb=document.getElementById("moreBtn");

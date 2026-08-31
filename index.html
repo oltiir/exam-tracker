@@ -90,6 +90,9 @@ try{var _t=localStorage.getItem("ubt-theme");if(_t)document.documentElement.setA
     </div>
     <div class="card keynums" id="keynums"></div>
     <div class="card due-strip" id="dueStrip" hidden role="button" tabindex="0"></div>
+    <div class="card due-strip" id="schedStrip" hidden role="button" tabindex="0"></div>
+    <div class="card ects-card" id="ectsCard" hidden></div>
+    <div class="card due-strip nudge" id="backupNudge" hidden role="button" tabindex="0"></div>
     <div class="card trend" id="trendCard" hidden>
       <div class="trend-head"><b data-i18n="trendH">Average over time</b><span id="trendDelta"></span></div>
       <svg id="trendSvg" width="100%" height="64" role="img"></svg>
@@ -244,6 +247,35 @@ try{var _t=localStorage.getItem("ubt-theme");if(_t)document.documentElement.setA
   <!-- setup -->
   <section id="setupSection" data-view="setup">
     <div class="shead"><h2 data-i18n="setup">Set up</h2><span class="hint" data-i18n="setupHint">pool → sessions → details</span></div>
+    <details class="card settings" id="detailsBox" data-keep>
+      <summary>
+        <svg class="chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+        <span data-i18n="detSum">Your details — name, average and targets</span>
+      </summary>
+      <div class="set-body">
+        <div class="set-grid">
+          <label><span data-i18n="lblName">Your name</span><input id="setName" data-i18n-ph="phName" placeholder="e.g. Alex" autocomplete="off"></label>
+          <label><span data-i18n="lblUniEmail">Uni email</span><input id="setUniEmail" type="email" data-i18n-ph="phUniEmail" placeholder="name.surname@ubt-uni.net" autocomplete="off"></label>
+          <label><span data-i18n="lblUniId">Student ID</span><input id="setUniId" data-i18n-ph="phUniId" placeholder="e.g. 22-123-456" autocomplete="off"></label>
+          <label class="span2"><span data-i18n="lblMajor">Major / program</span><select id="setMajor"></select></label>
+          <label><span data-i18n="lblYear">Year of studies</span><select id="setYear"></select></label>
+          <label class="span2" id="specRow"><span data-i18n="lblSpec">Specialization</span><select id="setSpec"></select></label>
+          <label><span data-i18n="lblCount">Courses completed</span><input type="number" id="setCount" min="0" step="1" inputmode="numeric"></label>
+          <label><span data-i18n="lblAvg">Current average</span><input type="number" id="setAvg" min="5" max="10" step="0.01" inputmode="decimal"></label>
+          <label><span data-i18n="lblTotal">Total courses in degree</span><input type="number" id="setTotal" min="1" step="1" inputmode="numeric"></label>
+          <label><span data-i18n="lblTotalEcts">Total ECTS in degree</span><input type="number" id="setTotalEcts" min="0" step="1" inputmode="numeric"></label>
+          <label><span data-i18n="lblTmin">Target from</span><input type="number" id="setTmin" min="5" max="10" step="0.05" inputmode="decimal"></label>
+          <label><span data-i18n="lblTmax">Target to</span><input type="number" id="setTmax" min="5" max="10" step="0.05" inputmode="decimal"></label>
+          <label><span data-i18n="lblEcts">ECTS completed</span><input type="number" id="setEcts" min="0" step="1" inputmode="numeric"></label>
+          <label><span data-i18n="lblAvgW">Weighted average (optional)</span><input type="number" id="setAvgW" min="5" max="10" step="0.01" inputmode="decimal"></label>
+        </div>
+        <p class="set-hint" id="derivedNote" hidden></p>
+        <div class="spec-panel" id="specPanel" hidden></div>
+        <div class="set-actions">
+          <button class="btn primary" id="saveDetails" type="button" data-i18n="saveDetails">Save details</button>
+        </div>
+      </div>
+    </details>
     <details class="card settings" id="compBox" data-keep>
       <summary>
         <svg class="chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
@@ -285,34 +317,6 @@ try{var _t=localStorage.getItem("ubt-theme");if(_t)document.documentElement.setA
         <div class="set-actions">
           <button class="btn ghost" id="addSess" type="button" data-i18n="addSess">+ Add session</button>
           <button class="btn primary" id="saveSess" type="button" data-i18n="saveSess">Save sessions</button>
-        </div>
-      </div>
-    </details>
-    <details class="card settings" id="detailsBox" data-keep>
-      <summary>
-        <svg class="chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
-        <span data-i18n="detSum">Your details — name, average and targets</span>
-      </summary>
-      <div class="set-body">
-        <div class="set-grid">
-          <label><span data-i18n="lblName">Your name</span><input id="setName" data-i18n-ph="phName" placeholder="e.g. Alex" autocomplete="off"></label>
-          <label><span data-i18n="lblUniEmail">Uni email</span><input id="setUniEmail" type="email" data-i18n-ph="phUniEmail" placeholder="name.surname@ubt-uni.net" autocomplete="off"></label>
-          <label><span data-i18n="lblUniId">Student ID</span><input id="setUniId" data-i18n-ph="phUniId" placeholder="e.g. 22-123-456" autocomplete="off"></label>
-          <label class="span2"><span data-i18n="lblMajor">Major / program</span><select id="setMajor"></select></label>
-          <label><span data-i18n="lblYear">Year of studies</span><select id="setYear"></select></label>
-          <label class="span2" id="specRow"><span data-i18n="lblSpec">Specialization</span><select id="setSpec"></select></label>
-          <label><span data-i18n="lblCount">Courses completed</span><input type="number" id="setCount" min="0" step="1" inputmode="numeric"></label>
-          <label><span data-i18n="lblAvg">Current average</span><input type="number" id="setAvg" min="5" max="10" step="0.01" inputmode="decimal"></label>
-          <label><span data-i18n="lblTotal">Total courses in degree</span><input type="number" id="setTotal" min="1" step="1" inputmode="numeric"></label>
-          <label><span data-i18n="lblTmin">Target from</span><input type="number" id="setTmin" min="5" max="10" step="0.05" inputmode="decimal"></label>
-          <label><span data-i18n="lblTmax">Target to</span><input type="number" id="setTmax" min="5" max="10" step="0.05" inputmode="decimal"></label>
-          <label><span data-i18n="lblEcts">ECTS completed</span><input type="number" id="setEcts" min="0" step="1" inputmode="numeric"></label>
-          <label><span data-i18n="lblAvgW">Weighted average (optional)</span><input type="number" id="setAvgW" min="5" max="10" step="0.01" inputmode="decimal"></label>
-        </div>
-        <p class="set-hint" id="derivedNote" hidden></p>
-        <div class="spec-panel" id="specPanel" hidden></div>
-        <div class="set-actions">
-          <button class="btn primary" id="saveDetails" type="button" data-i18n="saveDetails">Save details</button>
         </div>
       </div>
     </details>

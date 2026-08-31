@@ -160,6 +160,22 @@ h1{font-family:var(--display);font-weight:600;font-size:25px;letter-spacing:-.01
 .trend-head span{font:500 12px/1 var(--mono);color:var(--muted)}
 .trend svg{display:block;width:100%;margin-top:6px}
 
+/* ---------- degree ECTS progress ---------- */
+.ects-card{margin-top:12px;padding:13px 18px}
+.ects-card .row{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
+.ects-card .row b{font-family:var(--display);font-weight:600;font-size:13px}
+.ects-card .row span{font:500 12px/1 var(--mono);color:var(--muted)}
+.ects-card .cap-track{display:block;max-width:none;margin-top:9px}
+.due-strip.nudge{border-color:#eccfa8;background:linear-gradient(135deg,#fdf3e3,#fbeadb)}
+:root[data-theme="dark"] .due-strip.nudge{border-color:#5a4a2e;background:linear-gradient(135deg,#3a3222,#352c1e)}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]) .due-strip.nudge{border-color:#5a4a2e;background:linear-gradient(135deg,#3a3222,#352c1e)}
+}
+
+/* ---------- page entrance ---------- */
+.page-in{animation:pageIn .22s ease-out}
+@keyframes pageIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
 /* ---------- year tabs + session tabs + "now" dot ---------- */
 .yearbar{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
 .ytab{display:inline-flex;align-items:center;gap:7px;font:600 13.5px var(--body);
