@@ -150,6 +150,11 @@ h1{font-family:var(--display);font-weight:600;font-size:25px;letter-spacing:-.01
 .onboard p{color:var(--muted);font-size:14px;line-height:1.65;max-width:52ch;margin:0 auto}
 .onboard b{color:var(--ink)}
 .onboard .btn{margin-top:16px}
+.onboard-btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.guide{padding:6px 18px 18px;font-size:13.5px;color:var(--muted);line-height:1.7}
+.guide ul{list-style:none;display:flex;flex-direction:column;gap:9px;margin:10px 0}
+.guide b{color:var(--ink)}
+.guide p{margin-top:10px}
 .exam-row .f-grade{flex:0 0 72px}
 .set-body input:not([type=checkbox]):disabled{opacity:.55;background:var(--tint)}
 

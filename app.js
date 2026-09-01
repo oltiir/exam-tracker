@@ -791,6 +791,18 @@
     wizManualNote:"There's no built-in plan for this program yet — you'll add your subjects in Set up → Exam pool. Everything else works the same.",
     back:"Back",next:"Next",finish:"Finish",
     aboutNumbers:"How the numbers are counted",
+    guideSum:"How the app works — the 60-second guide",
+    guideBtn:"How it works",
+    guideHtml:"<ul>"
+      +"<li>🏠 <b>Overview</b> — your average and waterline, the class you're in now, what's due next, next-exam countdown, degree progress.</li>"
+      +"<li>✅ <b>Exams</b> — pick a session, tick exams into it from your pool. On exam day: <b>Mark as sat</b>, then tap the grade — 6+ clears the exam forever 🎉, a 5 keeps it for a retake. The calendar and <b>Add to phone calendar</b> live here.</li>"
+      +"<li>🚩 <b>Due</b> — homework and projects with deadlines, teammates and notes. Overdue turns red; a dot on the tab means something lands within 48h.</li>"
+      +"<li>🕰️ <b>Schedule</b> — enter your weekly classes once; it always shows what's on now and what's next, fully offline.</li>"
+      +"<li>📊 <b>Insights</b> — what your remaining grades must average for each target, and what this session could do to you.</li>"
+      +"<li>⚙️ <b>Set up</b> — edit passed courses, the pool and sessions; pick your bottom-bar tabs; export and sync.</li>"
+      +"</ul>"
+      +"<p>📱↔💻 <b>Sync:</b> “Copy sync code” here → message it to yourself → “Enter sync code” on the other device.</p>"
+      +"<p>Everything stays on this device — nothing is uploaded. <b>SQ/EN</b> switches language, 🌙 the theme. When an amber backup strip appears, tap it; when “New version ready” pops up, refresh.</p>",
     updateReady:"New version ready",refresh:"Refresh",
     syncCopy:"⧉ Copy sync code",syncPaste:"⇣ Enter sync code",
     syncCopied:"Copied ✓ — message it to yourself, then tap “Enter sync code” on the other device.",
@@ -945,6 +957,18 @@
     wizManualNote:"S'ka ende plan të gatshëm për këtë program — lëndët i shton te Cilësimet → Lista e provimeve. Gjithçka tjetër punon njëjtë.",
     back:"Prapa",next:"Vazhdo",finish:"Përfundo",
     aboutNumbers:"Si llogariten numrat",
+    guideSum:"Si funksionon — udhëzuesi 60-sekondësh",
+    guideBtn:"Si funksionon",
+    guideHtml:"<ul>"
+      +"<li>🏠 <b>Kryesore</b> — mesatarja me vijën e ujit, ora ku je tani, afati i radhës, numërimi deri te provimi, progresi i studimeve.</li>"
+      +"<li>✅ <b>Provimet</b> — zgjidhe sesionin, shtoji provimet nga lista. Ditën e provimit: <b>Shëno si të dhënë</b>, pastaj preke notën — 6+ e kalon përgjithmonë 🎉, 5-shi mbetet për rimarrje. Kalendari dhe <b>Shto në kalendarin e telefonit</b> janë këtu.</li>"
+      +"<li>🚩 <b>Detyrat</b> — detyrat e projektet me afate, ekip dhe shënime. Të vonuarat kuqen; pika te skeda = diçka brenda 48 orëve.</li>"
+      +"<li>🕰️ <b>Orari</b> — shkruaji orët njëherë; të tregon gjithmonë ku je tani dhe çka vjen, edhe pa internet.</li>"
+      +"<li>📊 <b>Analiza</b> — sa duhet mesatarisht në lëndët e mbetura për çdo objektiv, dhe ku të çon ky sesion.</li>"
+      +"<li>⚙️ <b>Cilësimet</b> — ndrysho lëndët e kaluara, listën e sesionet; zgjidhi skedat e shiritit; eksporto dhe sinkronizo.</li>"
+      +"</ul>"
+      +"<p>📱↔💻 <b>Sinkronizimi:</b> “Kopjo kodin” këtu → dërgoje vetes → “Vendos kodin” në pajisjen tjetër.</p>"
+      +"<p>Gjithçka mbetet në këtë pajisje — asgjë s'ngarkohet askund. <b>SQ/EN</b> ndërron gjuhën, 🌙 temën. Kur del shiriti i verdhë i kopjes, preke; kur del “Versioni i ri”, rifresko.</p>",
     updateReady:"Versioni i ri është gati",refresh:"Rifresko",
     syncCopy:"⧉ Kopjo kodin e sinkronizimit",syncPaste:"⇣ Vendos kodin",
     syncCopied:"U kopjua ✓ — dërgoje vetes në çfarëdo chat-i, pastaj prek “Vendos kodin” në pajisjen tjetër.",
@@ -2087,6 +2111,12 @@
 
   document.getElementById("onboardBtn").addEventListener("click",function(){
     openWizard();   /* university & major first, step by step */
+  });
+  document.getElementById("guideBtn").addEventListener("click",function(){
+    location.hash="#/setup";
+    var g=document.getElementById("guideBox");
+    g.open=true;
+    g.scrollIntoView({behavior:"smooth",block:"start"});
   });
 
   document.getElementById("saveDetails").addEventListener("click",function(){
