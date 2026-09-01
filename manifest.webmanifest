@@ -1,7 +1,7 @@
 {
-  "name": "UBT Exam Tracker",
-  "short_name": "Exams",
-  "description": "Exam session tracker and GPA planner with a live waterline gauge.",
+  "name": "Afati — Student Exam Tracker",
+  "short_name": "Afati",
+  "description": "Exam pool + session planner, GPA tracker and offline class schedule for university students.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

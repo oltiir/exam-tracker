@@ -1,9 +1,11 @@
 <div align="center">
 
-# 🎓 UBT Exam Tracker
+# 🎓 Afati — Student Exam Tracker
 
-Plan every exam sitting of the academic year and watch what each grade does to
-your average — before you commit to a session.
+Plan every exam sitting (afat) of the academic year and watch what each grade
+does to your average — before you commit to a session. Built for Kosovo
+universities: UBT and AAB ship with their official curricula, any other
+program works manually.
 
 [![Live app](https://img.shields.io/badge/live-oltiir.github.io%2Fexam--tracker-2ea44f?style=flat-square)](https://oltiir.github.io/exam-tracker/)
 [![No build step](https://img.shields.io/badge/build-none-blue?style=flat-square)](#stack)

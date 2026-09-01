@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>UBT Exam Tracker</title>
+<title>Afati · Exam Tracker</title>
 <meta name="description" content="Exam pool + session planner, GPA tracker and offline class schedule.">
 <meta name="theme-color" content="#f6f1e8">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Exam Tracker">
+<meta name="apple-mobile-web-app-title" content="Afati">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -189,10 +189,16 @@ try{var _t=localStorage.getItem("ubt-theme");if(_t)document.documentElement.setA
         <svg class="chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
       </summary>
       <div class="set-body">
-        <div id="schedRows" class="sched-rows"></div>
-        <div class="set-actions">
-          <button class="btn ghost" id="addSched" type="button" data-i18n="addClass">+ Add class</button>
-          <button class="btn primary" id="saveSched" type="button" data-i18n="saveSched">Save schedule</button>
+        <div class="ed-list" id="schedEdList"></div>
+        <div class="ed-form">
+          <div class="set-grid">
+            <label class="span2"><span data-i18n="phSubject">Subject</span><input id="dfName" autocomplete="off"></label>
+            <label><span data-i18n="lblDayW">Day</span><select id="dfDay"></select></label>
+            <label><span data-i18n="lblRoom">Room (optional)</span><input id="dfRoom" autocomplete="off"></label>
+            <label><span data-i18n="lblStart">Starts</span><input type="time" id="dfStart"></label>
+            <label><span data-i18n="lblEnd">Ends (optional)</span><input type="time" id="dfEnd"></label>
+          </div>
+          <div class="set-actions"><button class="btn primary" id="dfBtn" type="button"></button></div>
         </div>
       </div>
     </details>
@@ -257,14 +263,21 @@ try{var _t=localStorage.getItem("ubt-theme");if(_t)document.documentElement.setA
         <svg class="chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
       </summary>
       <div class="set-body">
+        <div class="curric-sem" data-i18n="grpIdentity">About you</div>
         <div class="set-grid">
           <label><span data-i18n="lblName">Your name</span><input id="setName" data-i18n-ph="phName" placeholder="e.g. Alex" autocomplete="off"></label>
-          <label><span data-i18n="lblUniEmail">Uni email</span><input id="setUniEmail" type="email" data-i18n-ph="phUniEmail" placeholder="name.surname@ubt-uni.net" autocomplete="off"></label>
-          <label><span data-i18n="lblUniId">Student ID</span><input id="setUniId" data-i18n-ph="phUniId" placeholder="e.g. 22-123-456" autocomplete="off"></label>
+          <label><span data-i18n="lblUniEmail">Uni email</span><input id="setUniEmail" type="email" data-i18n-ph="phUniEmail" autocomplete="off"></label>
+          <label><span data-i18n="lblUniId">Student ID</span><input id="setUniId" data-i18n-ph="phUniId" autocomplete="off"></label>
+        </div>
+        <div class="curric-sem" data-i18n="grpProgram">Your program</div>
+        <div class="set-grid">
           <label><span data-i18n="lblUni">University</span><select id="setUni"></select></label>
           <label class="span2"><span data-i18n="lblMajor">Major / program</span><select id="setMajor"></select></label>
           <label><span data-i18n="lblYear">Year of studies</span><select id="setYear"></select></label>
           <label class="span2" id="specRow"><span data-i18n="lblSpec">Specialization</span><select id="setSpec"></select></label>
+        </div>
+        <div class="curric-sem" data-i18n="grpNumbers">Numbers &amp; targets</div>
+        <div class="set-grid">
           <label><span data-i18n="lblCount">Courses completed</span><input type="number" id="setCount" min="0" step="1" inputmode="numeric"></label>
           <label><span data-i18n="lblAvg">Current average</span><input type="number" id="setAvg" min="5" max="10" step="0.01" inputmode="decimal"></label>
           <label><span data-i18n="lblTotal">Total courses in degree</span><input type="number" id="setTotal" min="1" step="1" inputmode="numeric"></label>
@@ -290,10 +303,14 @@ try{var _t=localStorage.getItem("ubt-theme");if(_t)document.documentElement.setA
       </summary>
       <div class="set-body">
         <p class="set-hint" data-i18n="compHint"></p>
-        <div id="compRows"></div>
-        <div class="set-actions">
-          <button class="btn ghost" id="addComp" type="button" data-i18n="addComp">+ Add course</button>
-          <button class="btn primary" id="saveComp" type="button" data-i18n="saveComp">Save courses</button>
+        <div class="ed-list" id="compList"></div>
+        <div class="ed-form">
+          <div class="set-grid">
+            <label class="span2"><span data-i18n="exName">Exam name</span><input id="cfName" autocomplete="off"></label>
+            <label><span data-i18n="grade">Grade</span><select id="cfGrade"></select></label>
+            <label><span>ECTS</span><input type="number" id="cfEcts" min="1" max="30" inputmode="numeric"></label>
+          </div>
+          <div class="set-actions"><button class="btn primary" id="cfBtn" type="button"></button></div>
         </div>
       </div>
     </details>
@@ -305,11 +322,16 @@ try{var _t=localStorage.getItem("ubt-theme");if(_t)document.documentElement.setA
         <svg class="chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
       </summary>
       <div class="set-body">
-        <p class="set-hint" data-i18n-html="poolHint"></p>
-        <div id="poolRows"></div>
-        <div class="set-actions">
-          <button class="btn ghost" id="addPool" type="button" data-i18n="addPool">+ Add exam</button>
-          <button class="btn primary" id="savePool" type="button" data-i18n="savePool">Save pool</button>
+        <p class="set-hint" data-i18n="poolHint"></p>
+        <div class="ed-list" id="poolList"></div>
+        <div class="ed-form">
+          <div class="set-grid">
+            <label class="span2"><span data-i18n="exName">Exam name</span><input id="pfName" autocomplete="off"></label>
+            <label><span data-i18n="lblSem">Semester</span><select id="pfSem"></select></label>
+            <label><span>ECTS</span><input type="number" id="pfEcts" min="1" max="30" inputmode="numeric"></label>
+            <label><span data-i18n="lblDate">Exam date (optional)</span><input type="date" id="pfDate"></label>
+          </div>
+          <div class="set-actions"><button class="btn primary" id="pfBtn" type="button"></button></div>
         </div>
       </div>
     </details>
@@ -321,10 +343,14 @@ try{var _t=localStorage.getItem("ubt-theme");if(_t)document.documentElement.setA
       </summary>
       <div class="set-body">
         <p class="set-hint" data-i18n="sessHint2"></p>
-        <div id="sessRows"></div>
-        <div class="set-actions">
-          <button class="btn ghost" id="addSess" type="button" data-i18n="addSess">+ Add session</button>
-          <button class="btn primary" id="saveSess" type="button" data-i18n="saveSess">Save sessions</button>
+        <div class="ed-list" id="sessList"></div>
+        <div class="ed-form">
+          <div class="set-grid">
+            <label class="span2"><span data-i18n="lblLabel">Label</span><input id="sfLabel" data-i18n-ph="labelPh" autocomplete="off"></label>
+            <label><span data-i18n="lblYearNum">Year</span><input type="number" id="sfYear" min="2020" max="2100" inputmode="numeric"></label>
+            <label><span data-i18n="lblMonth">Month</span><select id="sfMonth"></select></label>
+          </div>
+          <div class="set-actions"><button class="btn primary" id="sfBtn" type="button"></button></div>
         </div>
       </div>
     </details>

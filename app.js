@@ -673,7 +673,7 @@
   var DICT={
   en:{
     eyebrow:"Kolegji UBT · Exam session tracker",
-    defaultTitle:"Exam Tracker & GPA Planner",
+    defaultTitle:"Afati — Exam Tracker",
     setup:"Set up",
     coursesDone:"courses done",passedHere:"passed here",leftIn:"left in the pool",aiming:"aiming",
     runningAvg:"Running average",atWater:"at the waterline",above:"above",below:"below",
@@ -720,10 +720,10 @@
     rrFormula:"Live base: <code>{c}</code> passing grades, sum <code>{s}</code>, average <code>{a}</code>",
     setupHint:"details → finished → pool → sessions",
     poolSum:"Exam pool — everything you still have to sit",poolBadge:"{n} exams · {m} open",
-    poolHint:"Name · semester · date as <b>dd.mm.yyyy</b> (places it on the calendar). Removing an exam here also removes its grade and session entries.",
+    poolHint:"Every exam you still have to sit. Deleting one also removes its grade, prep and session entries.",
     addPool:"+ Add exam",savePool:"Save pool",
     sessSum:"Exam sessions — the sitting periods you plan around",
-    sessHint2:"Label · year · month. A session keeps its picked exams when you edit it.",
+    sessHint2:"The sitting periods you plan around. Each keeps its picked exams when edited.",
     addSess:"+ Add session",saveSess:"Save sessions",
     keepOne:"Keep at least one session — add a row first.",
     detSum:"Your details — name, average and targets",
@@ -755,6 +755,11 @@
     wizManualNote:"There's no built-in plan for this program yet — you'll add your subjects in Set up → Exam pool. Everything else works the same.",
     back:"Back",next:"Next",finish:"Finish",
     aboutNumbers:"How the numbers are counted",
+    saveChanges:"Save changes",
+    lblSem:"Semester",lblDate:"Exam date (optional)",lblLabel:"Label",
+    lblYearNum:"Year",lblMonth:"Month",lblDayW:"Day",
+    lblStart:"Starts",lblEnd:"Ends (optional)",lblRoom:"Room (optional)",
+    grpIdentity:"About you",grpProgram:"Your program",grpNumbers:"Numbers & targets",
     semLbl:"Semester {n}",
     curricH:"Official study plan — up to year {n}",
     curricSub:"Tick subjects, then send them where they belong: exams you still owe → the pool; exams you've passed → completed courses. Electives (zgjedhore) aren't listed — add yours manually in the exam pool. Semesters stay editable afterwards, so you can move a subject if the plan shifts.",
@@ -800,7 +805,7 @@
     dueIcs:"📅 Add deadlines to calendar",
     generalW:"— general",
     compSum:"Completed courses — what you've already passed",
-    compHint:"Name · grade · ECTS (optional). Your starting average, course count and ECTS are computed from these rows.",
+    compHint:"Your passed courses — the starting average, count and ECTS are computed from them.",
     addComp:"+ Add course",saveComp:"Save courses",
     compBadge:"{n} courses · avg {a}",
     fromTranscript:"Course count, average and ECTS are computed from the {n} completed courses above.",
@@ -816,7 +821,7 @@
   },
   sq:{
     eyebrow:"Kolegji UBT · Gjurmuesi i provimeve",
-    defaultTitle:"Gjurmuesi i Provimeve",
+    defaultTitle:"Afati — Gjurmuesi i Provimeve",
     setup:"Cilësimet",
     coursesDone:"lëndë të kryera",passedHere:"të kaluara këtu",leftIn:"të mbetura në listë",aiming:"synimi",
     runningAvg:"Mesatarja aktuale",atWater:"në vijën e ujit",above:"mbi",below:"nën",
@@ -863,10 +868,10 @@
     rrFormula:"Baza live: <code>{c}</code> nota kaluese, shuma <code>{s}</code>, mesatarja <code>{a}</code>",
     setupHint:"detajet → të kryerat → lista → sesionet",
     poolSum:"Lista e provimeve — gjithçka që ende s'e ke dhënë",poolBadge:"{n} provime · {m} të hapura",
-    poolHint:"Emri · semestri · data si <b>dd.mm.yyyy</b> (e vendos në kalendar). Heqja e provimit këtu fshin edhe notën dhe regjistrimet e tij.",
+    poolHint:"Çdo provim që ende s'e ke dhënë. Fshirja e tij i heq edhe notën, përgatitjen dhe regjistrimet.",
     addPool:"+ Shto provim",savePool:"Ruaj listën",
     sessSum:"Sesionet e provimeve — afatet rreth të cilave planifikon",
-    sessHint2:"Emërtimi · viti · muaji. Sesioni i ruan provimet e zgjedhura kur e ndryshon.",
+    sessHint2:"Afatet e provimeve rreth të cilave planifikon. Secili i ruan provimet e zgjedhura kur ndryshohet.",
     addSess:"+ Shto sesion",saveSess:"Ruaj sesionet",
     keepOne:"Mbaj së paku një sesion — shto një rresht së pari.",
     detSum:"Detajet e tua — emri, mesatarja dhe objektivat",
@@ -898,6 +903,11 @@
     wizManualNote:"S'ka ende plan të gatshëm për këtë program — lëndët i shton te Cilësimet → Lista e provimeve. Gjithçka tjetër punon njëjtë.",
     back:"Prapa",next:"Vazhdo",finish:"Përfundo",
     aboutNumbers:"Si llogariten numrat",
+    saveChanges:"Ruaj ndryshimet",
+    lblSem:"Semestri",lblDate:"Data e provimit (ops.)",lblLabel:"Emërtimi",
+    lblYearNum:"Viti",lblMonth:"Muaji",lblDayW:"Dita",
+    lblStart:"Fillon",lblEnd:"Mbaron (ops.)",lblRoom:"Salla (ops.)",
+    grpIdentity:"Për ty",grpProgram:"Programi yt",grpNumbers:"Numrat & objektivat",
     semLbl:"Semestri {n}",
     curricH:"Plani zyrtar — deri në vitin {n}",
     curricSub:"Shënoji lëndët dhe çoji ku duhet: provimet që t'kanë mbetur → në listë; ato që i ke kaluar → te të përfunduarat. Lëndët zgjedhore s'janë në listë — shtoji vetë në listën e provimeve. Semestrat mbeten të ndryshueshëm më vonë, po lëvizi lëndët nëse ndryshon plani.",
@@ -943,7 +953,7 @@
     dueIcs:"📅 Shto afatet në kalendar",
     generalW:"— e përgjithshme",
     compSum:"Lëndët e përfunduara — çka ke kaluar tashmë",
-    compHint:"Emri · nota · ECTS (ops.). Mesatarja fillestare, numri i lëndëve dhe ECTS llogariten nga këto rreshta.",
+    compHint:"Lëndët e kaluara — mesatarja fillestare, numri dhe ECTS llogariten prej tyre.",
     addComp:"+ Shto lëndë",saveComp:"Ruaj lëndët",
     compBadge:"{n} lëndë · mes. {a}",
     fromTranscript:"Numri i lëndëve, mesatarja dhe ECTS llogariten nga {n} lëndët e përfunduara më lart.",
@@ -1133,7 +1143,7 @@
       open[el.id]=el.open;});
     buildHeader();buildYearBar();buildSessBar();buildExamsHead();buildPicker();buildCards();
     buildCalendar();buildCleared();buildTables();buildSetup();render();buildTrend();
-    renderNow();buildSchedList();fillSchedEditor();renderBnav();buildTabsEditor();buildDue();
+    renderNow();buildSchedList();buildSchedEditor();renderBnav();buildTabsEditor();buildDue();
     Object.keys(open).forEach(function(id){
       var el=document.getElementById(id);if(el)el.open=open[id];});
     var wb=document.getElementById("whatifBtn");
@@ -1683,19 +1693,7 @@
   document.getElementById("customizeBtn").addEventListener("click",openSetup);
 
   function buildSetup(){
-    /* completed-courses editor */
-    var cr=document.getElementById("compRows");cr.innerHTML="";
-    DATA.completed.forEach(function(c){cr.appendChild(compRow(c));});
-    document.getElementById("compBadge").textContent=DATA.completed.length
-      ?t("compBadge",{n:DATA.completed.length,a:n2(DATA.profile.baseAvg)}):"";
-    /* pool editor */
-    var pr=document.getElementById("poolRows");pr.innerHTML="";
-    DATA.pool.forEach(function(ex){pr.appendChild(poolRow(ex));});
-    document.getElementById("poolBadge").textContent=
-      t("poolBadge",{n:DATA.pool.length,m:unfinished(DATA.pool,R()).length});
-    /* sessions editor */
-    var sr=document.getElementById("sessRows");sr.innerHTML="";
-    sortSessions(DATA.sessions).forEach(function(sn){sr.appendChild(sessRow(sn));});
+    buildCompEditor();buildPoolEditor();buildSessEditor();
     /* details */
     var p=DATA.profile;
     document.getElementById("setName").value=p.name||"";
@@ -1838,116 +1836,172 @@
   document.getElementById("setMajor").addEventListener("change",renderCurricPanel);
   document.getElementById("setSpec").addEventListener("change",renderCurricPanel);
   document.getElementById("setYear").addEventListener("change",renderCurricPanel);
-  function compRow(c){
-    var row=document.createElement("div");row.className="exam-row";
-    row.dataset.id=c?c.id:("f"+Date.now().toString(36)+Math.floor(Math.random()*1e4).toString(36));
-    var n=document.createElement("input");n.className="f-name";n.placeholder=t("exName");
-    n.value=c?c.name:"";
-    var g=document.createElement("select");g.className="mon f-grade";
-    [6,7,8,9,10].forEach(function(gr){
-      var o=document.createElement("option");o.value=gr;o.textContent=gr;
-      if(c&&c.grade===gr)o.selected=true;g.appendChild(o);});
-    var ec=document.createElement("input");ec.className="f-sem";ec.type="number";ec.min=1;ec.max=30;
-    ec.placeholder=t("ectsPh");if(c&&c.ects)ec.value=c.ects;
-    var x=document.createElement("button");x.type="button";x.textContent="✕";x.title=t("removeExam");
-    x.addEventListener("click",function(){row.remove();});
-    row.appendChild(n);row.appendChild(g);row.appendChild(ec);row.appendChild(x);
+  /* ---------- item editors: a clean list + one labeled form ----------
+     Every change persists immediately; Edit loads the item into the form. */
+  function edRow(main,metaHtml,onEdit,onDel){
+    var row=document.createElement("div");row.className="ed-row";
+    var tx=document.createElement("div");tx.className="ed-tx";
+    tx.innerHTML='<span class="ed-name">'+esc(main)+'</span>'
+      +(metaHtml?'<span class="ed-meta">'+metaHtml+'</span>':"");
+    var ed=document.createElement("button");ed.type="button";ed.className="btn small";
+    ed.textContent=t("editWork");
+    ed.addEventListener("click",onEdit);
+    var del=document.createElement("button");del.type="button";del.className="x-btn ed-x";
+    del.title=t("deleteWork");del.textContent="✕";
+    del.addEventListener("click",onDel);
+    row.appendChild(tx);row.appendChild(ed);row.appendChild(del);
     return row;
+  }
+  function selNum(sel,from,to,cur){
+    sel.innerHTML="";
+    for(var v=from;v<=to;v++){
+      var o=document.createElement("option");o.value=v;o.textContent=v;
+      if(cur===v)o.selected=true;sel.appendChild(o);
+    }
   }
 
-  function poolRow(ex){
-    var row=document.createElement("div");row.className="exam-row";
-    row.dataset.id=ex?ex.id:("x"+Date.now().toString(36)+Math.floor(Math.random()*1e4).toString(36));
-    var n=document.createElement("input");n.className="f-name";n.placeholder=t("exName");n.value=ex?ex.name:"";
-    var sm=document.createElement("input");sm.className="f-sem";sm.type="number";sm.min=1;sm.max=8;
-    sm.placeholder=t("exSem");if(ex&&ex.sem)sm.value=ex.sem;
-    var ec=document.createElement("input");ec.className="f-sem";ec.type="number";ec.min=1;ec.max=30;
-    ec.placeholder=t("ectsPh");if(ex&&ex.ects)ec.value=ex.ects;
-    var dt=document.createElement("input");dt.className="f-date";dt.placeholder="dd.mm.yyyy";
-    dt.value=ex&&ex.date?ex.date:"";
-    var x=document.createElement("button");x.type="button";x.textContent="✕";x.title=t("removeExam");
-    x.addEventListener("click",function(){row.remove();});
-    row.appendChild(n);row.appendChild(sm);row.appendChild(ec);row.appendChild(dt);row.appendChild(x);
-    return row;
+  /* completed courses */
+  var editComp=null;
+  function fillCompForm(c){
+    document.getElementById("cfName").value=c?c.name:"";
+    selNum(document.getElementById("cfGrade"),6,10,c?c.grade:8);
+    document.getElementById("cfEcts").value=c&&c.ects?c.ects:"";
+    document.getElementById("cfBtn").textContent=c?t("saveChanges"):t("addComp");
   }
-  document.getElementById("addComp").addEventListener("click",function(){
-    document.getElementById("compRows").appendChild(compRow(null));});
-  document.getElementById("saveComp").addEventListener("click",function(){
-    var next=[];
-    Array.prototype.forEach.call(document.querySelectorAll("#compRows .exam-row"),function(row){
-      var ins=row.querySelectorAll("input");   /* name, ects */
-      var name=ins[0].value.trim();if(!name)return;
-      next.push({id:row.dataset.id,name:name,
-        grade:+row.querySelector("select").value||6,
-        ects:ins[1].value?+ins[1].value:""});
-    });
-    DATA.completed=next;
+  function compAfterChange(){
     deriveBase(DATA);
     if(DATA.profile.totalCourses<DATA.profile.baseCount)
       DATA.profile.totalCourses=DATA.profile.baseCount;
     save();buildAll();
-  });
-  document.getElementById("onboardBtn").addEventListener("click",function(){
-    openWizard();   /* university & major first, step by step */
-  });
-  document.getElementById("addPool").addEventListener("click",function(){
-    document.getElementById("poolRows").appendChild(poolRow(null));});
-  document.getElementById("savePool").addEventListener("click",function(){
-    var next=[];
-    Array.prototype.forEach.call(document.querySelectorAll("#poolRows .exam-row"),function(row){
-      var ins=row.querySelectorAll("input");   /* name, sem, ects, date */
-      var name=ins[0].value.trim();if(!name)return;
-      next.push({id:row.dataset.id,name:name,
-        sem:ins[1].value?+ins[1].value:"",
-        ects:ins[2].value?+ins[2].value:"",
-        date:ins[3].value.trim()});
+  }
+  function buildCompEditor(){
+    var list=document.getElementById("compList");list.innerHTML="";
+    DATA.completed.forEach(function(c){
+      list.appendChild(edRow(c.name,
+        '<span class="sem-badge">'+esc(t("grade"))+" "+c.grade+'</span>'
+        +(c.ects?'<span class="sem-badge">'+c.ects+' ECTS</span>':""),
+        function(){editComp=c.id;fillCompForm(c);},
+        function(){
+          if(!confirm(t("deleteConfirm",{name:c.name})))return;
+          DATA.completed=DATA.completed.filter(function(x){return x.id!==c.id;});
+          if(editComp===c.id)editComp=null;
+          compAfterChange();
+        }));
     });
-    var keep={};next.forEach(function(e){keep[e.id]=true;});
-    /* removing an exam removes its session entries, result and prep */
-    DATA.sessions.forEach(function(sn){
-      sn.entries=(sn.entries||[]).filter(function(en){return keep[en.examId];});});
-    Object.keys(DATA.results).forEach(function(k){if(!keep[k])delete DATA.results[k];});
-    Object.keys(DATA.prep).forEach(function(k){if(!keep[k])delete DATA.prep[k];});
-    DATA.pool=next;
+    document.getElementById("compBadge").textContent=DATA.completed.length
+      ?t("compBadge",{n:DATA.completed.length,a:n2(DATA.profile.baseAvg)}):"";
+    var cur=null;
+    DATA.completed.forEach(function(c){if(c.id===editComp)cur=c;});
+    if(!cur)editComp=null;
+    fillCompForm(cur);
+  }
+  document.getElementById("cfBtn").addEventListener("click",function(){
+    var name=document.getElementById("cfName").value.trim();
+    if(!name)return;
+    var it=null;
+    DATA.completed.forEach(function(c){if(c.id===editComp)it=c;});
+    if(!it){it={id:rid("f")};DATA.completed.push(it);}
+    it.name=name;
+    it.grade=+document.getElementById("cfGrade").value||8;
+    var ce=document.getElementById("cfEcts").value;
+    it.ects=ce?+ce:"";
+    editComp=null;
+    compAfterChange();
+  });
+
+  /* exam pool */
+  var editPool=null;
+  function fillPoolForm(ex){
+    document.getElementById("pfName").value=ex?ex.name:"";
+    selNum(document.getElementById("pfSem"),1,8,ex&&ex.sem?+ex.sem:1);
+    document.getElementById("pfEcts").value=ex&&ex.ects?ex.ects:"";
+    document.getElementById("pfDate").value=ex?dmyToIso(ex.date):"";
+    document.getElementById("pfBtn").textContent=ex?t("saveChanges"):t("addPool");
+  }
+  function buildPoolEditor(){
+    var list=document.getElementById("poolList");list.innerHTML="";
+    DATA.pool.slice().sort(function(a,b){
+      return ((+a.sem||9)-(+b.sem||9))||a.name.localeCompare(b.name);
+    }).forEach(function(ex){
+      list.appendChild(edRow(ex.name,
+        '<span class="sem-badge">'+esc(t("exSem"))+" "+(ex.sem||"–")+'</span>'
+        +(ex.ects?'<span class="sem-badge">'+ex.ects+' ECTS</span>':"")
+        +(ex.date?'<span class="pick-date">'+esc(dayLabel(ex))+'</span>':""),
+        function(){editPool=ex.id;fillPoolForm(ex);},
+        function(){
+          if(!confirm(t("deleteConfirm",{name:ex.name})))return;
+          DATA.pool=DATA.pool.filter(function(x){return x.id!==ex.id;});
+          DATA.sessions.forEach(function(sn){
+            sn.entries=sn.entries.filter(function(en){return en.examId!==ex.id;});});
+          delete DATA.results[ex.id];delete DATA.prep[ex.id];
+          if(editPool===ex.id)editPool=null;
+          save();buildAll();
+        }));
+    });
+    document.getElementById("poolBadge").textContent=DATA.pool.length
+      ?t("poolBadge",{n:DATA.pool.length,m:unfinished(DATA.pool,R()).length}):"";
+    var cur=null;DATA.pool.forEach(function(x){if(x.id===editPool)cur=x;});
+    if(!cur)editPool=null;
+    fillPoolForm(cur);
+  }
+  document.getElementById("pfBtn").addEventListener("click",function(){
+    var name=document.getElementById("pfName").value.trim();
+    if(!name)return;
+    var it=null;DATA.pool.forEach(function(x){if(x.id===editPool)it=x;});
+    if(!it){it={id:rid("c"),date:""};DATA.pool.push(it);}
+    it.name=name;
+    it.sem=+document.getElementById("pfSem").value||"";
+    var pe=document.getElementById("pfEcts").value;it.ects=pe?+pe:"";
+    it.date=isoToDmy(document.getElementById("pfDate").value);
+    editPool=null;
     save();buildAll();
   });
 
-  function sessRow(sn){
-    var row=document.createElement("div");row.className="exam-row";
-    row.dataset.id=sn?sn.id:("s"+Date.now().toString(36)+Math.floor(Math.random()*1e4).toString(36));
-    var l=document.createElement("input");l.className="f-name";l.placeholder=t("labelPh");
-    l.value=sn?sn.label:"";
-    var y=document.createElement("input");y.className="f-year";y.type="number";y.min=2020;y.max=2100;
-    y.placeholder=t("yearPh");y.value=sn?sn.year:NOW.getFullYear();
-    var m=document.createElement("select");m.className="mon";
+  /* sessions */
+  var editSess=null;
+  function fillSessForm(sn){
+    document.getElementById("sfLabel").value=sn?sn.label:"";
+    document.getElementById("sfYear").value=sn?sn.year:NOW.getFullYear();
+    var ms=document.getElementById("sfMonth");ms.innerHTML="";
     LOC.MON_FULL.forEach(function(nm,i){
-      var o=document.createElement("option");o.value=i+1;o.textContent=LOC.MON[i];
-      if(sn&&sn.month===i+1)o.selected=true;m.appendChild(o);});
-    var x=document.createElement("button");x.type="button";x.textContent="✕";x.title=t("removeSess");
-    x.addEventListener("click",function(){row.remove();});
-    row.appendChild(l);row.appendChild(y);row.appendChild(m);row.appendChild(x);
-    return row;
+      var o=document.createElement("option");o.value=i+1;o.textContent=nm;
+      if((sn?sn.month:9)===i+1)o.selected=true;ms.appendChild(o);});
+    document.getElementById("sfBtn").textContent=sn?t("saveChanges"):t("addSess");
   }
-  document.getElementById("addSess").addEventListener("click",function(){
-    document.getElementById("sessRows").appendChild(sessRow(null));});
-  document.getElementById("saveSess").addEventListener("click",function(){
-    var rows=document.querySelectorAll("#sessRows .exam-row");
-    if(!rows.length){alert(t("keepOne"));return;}
-    var oldById={};DATA.sessions.forEach(function(sn){oldById[sn.id]=sn;});
-    var next=[];
-    Array.prototype.forEach.call(rows,function(row){
-      var year=+row.querySelector(".f-year").value||NOW.getFullYear();
-      var month=+row.querySelector("select.mon").value||1;
-      var label=row.querySelector(".f-name").value.trim()||LOC.MON_FULL[month-1]+" "+year;
-      var old=oldById[row.dataset.id];
-      next.push({id:row.dataset.id,label:label,year:year,month:month,
-        entries:old?old.entries:[]});
+  function buildSessEditor(){
+    var list=document.getElementById("sessList");list.innerHTML="";
+    sortSessions(DATA.sessions).forEach(function(sn){
+      var n=(sn.entries||[]).length;
+      list.appendChild(edRow(sn.label,
+        (n?'<span class="sem-badge">'+n+" "+esc(t("navExams").toLowerCase())+'</span>'
+          :'<span class="pick-date">'+esc(t("nothingPlanned"))+'</span>'),
+        function(){editSess=sn.id;fillSessForm(sn);},
+        function(){
+          if(DATA.sessions.length<=1){alert(t("keepOne"));return;}
+          if(!confirm(t("deleteConfirm",{name:sn.label})))return;
+          DATA.sessions=DATA.sessions.filter(function(x){return x.id!==sn.id;});
+          if(editSess===sn.id)editSess=null;
+          if(UI.session===sn.id)UI.session=autoSelect(DATA.sessions,DATA.pool,NOW);
+          save();buildAll();
+        }));
     });
-    if(!next.length){alert(t("keepOne"));return;}
-    DATA.sessions=next;
-    if(!next.some(function(sn){return sn.id===UI.session;}))
-      UI.session=autoSelect(DATA.sessions,DATA.pool,NOW);
+    var cur=null;DATA.sessions.forEach(function(x){if(x.id===editSess)cur=x;});
+    if(!cur)editSess=null;
+    fillSessForm(cur);
+  }
+  document.getElementById("sfBtn").addEventListener("click",function(){
+    var year=+document.getElementById("sfYear").value||NOW.getFullYear();
+    var month=+document.getElementById("sfMonth").value||1;
+    var label=document.getElementById("sfLabel").value.trim()||LOC.MON_FULL[month-1]+" "+year;
+    var it=null;DATA.sessions.forEach(function(x){if(x.id===editSess)it=x;});
+    if(!it){it={id:rid("s"),entries:[]};DATA.sessions.push(it);}
+    it.label=label;it.year=year;it.month=month;
+    editSess=null;
     save();buildAll();
+  });
+
+  document.getElementById("onboardBtn").addEventListener("click",function(){
+    openWizard();   /* university & major first, step by step */
   });
 
   document.getElementById("saveDetails").addEventListener("click",function(){
@@ -2079,45 +2133,53 @@
     if(!document.hidden){renderNow();buildSchedList();}
   });
 
-  function schedRow(en){
-    var row=document.createElement("div");row.className="exam-row";
-    var day=document.createElement("select");day.className="mon f-day7";
+  /* schedule editor: same list + form pattern */
+  var editSched=null;
+  function fillSchedForm(en){
+    var ds=document.getElementById("dfDay");ds.innerHTML="";
     LOC.DAYS.forEach(function(nm,i){
       var o=document.createElement("option");o.value=i+1;o.textContent=nm;
-      if(en&&en.day===i+1)o.selected=true;day.appendChild(o);});
-    var st=document.createElement("input");st.type="time";st.className="f-time";
-    if(en&&en.start)st.value=en.start;
-    var et=document.createElement("input");et.type="time";et.className="f-time";
-    if(en&&en.end)et.value=en.end;
-    var nm2=document.createElement("input");nm2.className="f-name";
-    nm2.placeholder=t("phSubject");if(en)nm2.value=en.name;
-    var rm=document.createElement("input");rm.className="f-note";
-    rm.placeholder=t("phRoom");if(en&&en.room)rm.value=en.room;
-    var x=document.createElement("button");x.type="button";x.textContent="✕";
-    x.addEventListener("click",function(){row.remove();});
-    row.appendChild(day);row.appendChild(st);row.appendChild(et);
-    row.appendChild(nm2);row.appendChild(rm);row.appendChild(x);
-    return row;
+      if((en?en.day:1)===i+1)o.selected=true;ds.appendChild(o);});
+    document.getElementById("dfStart").value=en?en.start:"";
+    document.getElementById("dfEnd").value=en&&en.end?en.end:"";
+    document.getElementById("dfName").value=en?en.name:"";
+    document.getElementById("dfRoom").value=en&&en.room?en.room:"";
+    document.getElementById("dfBtn").textContent=en?t("saveChanges"):t("addClass");
   }
-  function fillSchedEditor(){
-    var box=document.getElementById("schedRows");box.innerHTML="";
+  function buildSchedEditor(){
+    var list=document.getElementById("schedEdList");list.innerHTML="";
     (DATA.schedule||[]).slice().sort(function(a,b){
       return (a.day-b.day)||((toMin(a.start)||0)-(toMin(b.start)||0));
-    }).forEach(function(en){box.appendChild(schedRow(en));});
-  }
-  document.getElementById("addSched").addEventListener("click",function(){
-    document.getElementById("schedRows").appendChild(schedRow(null));});
-  document.getElementById("saveSched").addEventListener("click",function(){
-    var next=[];
-    Array.prototype.forEach.call(document.querySelectorAll("#schedRows .exam-row"),function(row){
-      var day=+row.querySelector("select").value||1;
-      var ins=row.querySelectorAll("input");   /* start, end, name, room */
-      var name=ins[2].value.trim();
-      if(!name||!ins[0].value)return;
-      next.push({day:day,start:ins[0].value,end:ins[1].value||"",
-        name:name,room:ins[3].value.trim()});
+    }).forEach(function(en){
+      var idx=DATA.schedule.indexOf(en);
+      list.appendChild(edRow(en.name,
+        '<span class="sem-badge">'+esc(LOC.DAYS[en.day-1])+'</span>'
+        +'<span class="pick-date">'+esc(en.start+(en.end?"–"+en.end:""))+'</span>'
+        +(en.room?'<span class="pick-date">'+esc(en.room)+'</span>':""),
+        function(){editSched=idx;fillSchedForm(en);},
+        function(){
+          if(!confirm(t("deleteConfirm",{name:en.name})))return;
+          DATA.schedule.splice(idx,1);
+          editSched=null;
+          save();buildAll();
+        }));
     });
-    DATA.schedule=next;
+    var cur=(editSched!=null&&DATA.schedule[editSched])?DATA.schedule[editSched]:null;
+    if(!cur)editSched=null;
+    fillSchedForm(cur);
+  }
+  document.getElementById("dfBtn").addEventListener("click",function(){
+    var name=document.getElementById("dfName").value.trim();
+    var start=document.getElementById("dfStart").value;
+    if(!name||!start)return;
+    var it=(editSched!=null&&DATA.schedule[editSched])?DATA.schedule[editSched]:null;
+    if(!it){it={};DATA.schedule.push(it);}
+    it.day=+document.getElementById("dfDay").value||1;
+    it.start=start;
+    it.end=document.getElementById("dfEnd").value||"";
+    it.name=name;
+    it.room=document.getElementById("dfRoom").value.trim();
+    editSched=null;
     save();buildAll();
   });
 
