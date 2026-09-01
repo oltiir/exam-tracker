@@ -80,17 +80,13 @@ try{var _t=localStorage.getItem("ubt-theme");if(_t)document.documentElement.setA
         <div class="scale" id="gaugeScale"></div>
       </div>
     </div>
+    <div class="card due-strip" id="schedStrip" hidden role="button" tabindex="0"></div>
+    <div class="card due-strip" id="dueStrip" hidden role="button" tabindex="0"></div>
     <div class="stats">
+      <div class="stat"><div class="n" id="stFirst">–</div><div class="l" id="stFirstL">next exam</div></div>
       <div class="stat"><div class="n" id="stCleared">0</div><div class="l" data-i18n="passedSession">passed this session</div></div>
       <div class="stat"><div class="n" id="stPool">0</div><div class="l" data-i18n="leftPool">left in the pool</div></div>
-      <div class="stat"><div class="n" id="stBase">–</div><div class="l" data-i18n="startAvg">start average</div></div>
-      <div class="stat"><div class="n" id="stTarget">–</div><div class="l" data-i18n="targetBand">target band</div></div>
-      <div class="stat"><div class="n" id="stFirst">–</div><div class="l" id="stFirstL">next exam</div></div>
-      <div class="stat"><div class="n" id="stLast">–</div><div class="l" data-i18n="lastExam">last exam</div></div>
     </div>
-    <div class="card keynums" id="keynums"></div>
-    <div class="card due-strip" id="dueStrip" hidden role="button" tabindex="0"></div>
-    <div class="card due-strip" id="schedStrip" hidden role="button" tabindex="0"></div>
     <div class="card ects-card" id="ectsCard" hidden></div>
     <div class="card due-strip nudge" id="backupNudge" hidden role="button" tabindex="0"></div>
     <div class="card trend" id="trendCard" hidden>
@@ -108,9 +104,11 @@ try{var _t=localStorage.getItem("ubt-theme");if(_t)document.documentElement.setA
 
   <!-- exams in the selected session -->
   <section id="examsSection" data-view="exams">
-    <div class="shead"><h2 id="examHead">Your exams</h2><span class="hint" data-i18n="dukagjini">which Dukagjini window applies depends on the professor</span></div>
-    <div class="tools">
+    <div class="shead"><h2 id="examHead">Your exams</h2>
+      <span class="hint" id="examHint" data-i18n="dukagjini">which Dukagjini window applies depends on the professor</span>
       <button class="btn small" id="whatifBtn" type="button"></button>
+    </div>
+    <div class="tools">
       <span class="whatif-banner" data-i18n="whatifBanner"></span>
     </div>
     <details class="card pick" id="pickBox" data-keep>
@@ -119,9 +117,9 @@ try{var _t=localStorage.getItem("ubt-theme");if(_t)document.documentElement.setA
         <span data-i18n="addExams">Add exams to this session</span>
         <span class="badge" id="pickBadge"></span>
       </summary>
+      <p class="sub pick-sub" data-i18n-html="pickSub"></p>
       <div class="pick-list" id="pickList"></div>
     </details>
-    <p class="sub" data-i18n-html="pickSub"></p>
     <div class="grid" id="grid"></div>
   </section>
 
@@ -220,6 +218,7 @@ try{var _t=localStorage.getItem("ubt-theme");if(_t)document.documentElement.setA
   <section id="gpaSection" data-view="stats">
     <div class="shead"><h2 data-i18n="gpaH">GPA reference</h2></div>
     <p class="sub" data-i18n="gpaSub"></p>
+    <div class="card keynums" id="keynums"></div>
     <div class="two-col">
       <div class="card">
         <div class="tbl-scroll">

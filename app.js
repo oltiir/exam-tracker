@@ -683,7 +683,7 @@
     targetBand:"target band",nextExam:"next exam",firstExam:"first exam",lastExam:"last exam",
     today:"today",tomorrow:"tomorrow",inD:"in {n}d",
     kn1:"Passing grades above <b>{x}</b> lift your average — a fail (5) doesn't count, the exam just stays in the pool",
-    kn2:"Degree ceiling <b>{x}</b>",kn3:"{n} pending at ~9 → <b>{x}</b>",
+    kn2:"Degree ceiling <b>{x}</b>",kn3:"{n} pending at ~9 → <b>{x}</b>",knT:"Target band <b>{x}</b>",
     sessH:"Exam sessions",
     sessHint:"the green dot marks where “now” is — grades count toward your average from any session",
     nowTitle:"current period",
@@ -825,7 +825,7 @@
     targetBand:"objektivi",nextExam:"provimi i radhës",firstExam:"provimi i parë",lastExam:"provimi i fundit",
     today:"sot",tomorrow:"nesër",inD:"pas {n} ditësh",
     kn1:"Notat kaluese mbi <b>{x}</b> e ngritin mesataren — 5-shi nuk llogaritet, provimi thjesht mbetet në listë",
-    kn2:"Tavani i studimeve <b>{x}</b>",kn3:"{n} në pritje me ~9 → <b>{x}</b>",
+    kn2:"Tavani i studimeve <b>{x}</b>",kn3:"{n} në pritje me ~9 → <b>{x}</b>",knT:"Objektivi <b>{x}</b>",
     sessH:"Sesionet e provimeve",
     sessHint:"pika e gjelbër tregon ku është “tani” — notat llogariten në mesatare nga çdo sesion",
     nowTitle:"afati aktual",
@@ -1159,8 +1159,6 @@
     /* first-run guide until anything personal exists */
     var ob=document.getElementById("onboardCard");
     ob.hidden=!blank;
-    document.getElementById("stBase").textContent=p.baseCount?n2(p.baseAvg):"–";
-    document.getElementById("stTarget").textContent=nice(p.targetMin)+"–"+nice(p.targetMax);
     var span=0.45;
     document.getElementById("wlineLbl").textContent=p.baseCount?n2(p.baseAvg):"–";
     document.getElementById("gaugeScale").textContent=
@@ -1228,7 +1226,6 @@
       fv.textContent=ex.length?dayLabel(ex[0].ex):"–";
       fl.textContent=t("firstExam");
     }
-    document.getElementById("stLast").textContent=ex.length?dayLabel(ex[ex.length-1].ex):"–";
     var segs=document.getElementById("segs");segs.innerHTML="";
     segs.style.gridTemplateColumns="repeat("+Math.max(ex.length,1)+",1fr)";
     ex.forEach(function(){var s=document.createElement("div");s.className="seg";segs.appendChild(s);});
