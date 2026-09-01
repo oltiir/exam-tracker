@@ -1,5 +1,5 @@
 /* UBT Exam Tracker — simple offline cache */
-const CACHE = "exam-tracker-v20";
+const CACHE = "exam-tracker-v21";
 const ASSETS = [
   "./", "./index.html", "./app.css", "./app.js",
   "./manifest.webmanifest", "./icon-192.png", "./icon-512.png"

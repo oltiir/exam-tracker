@@ -517,8 +517,12 @@ details.settings{margin-top:14px}
 /* ---------- bottom navigation (mobile) ---------- */
 .bnav{position:fixed;left:0;right:0;bottom:0;z-index:60;display:none;
   justify-content:space-around;align-items:stretch;gap:2px;
-  background:var(--bnav-bg);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
+  background:var(--surface);
   border-top:1px solid var(--border);
+  box-shadow:0 -6px 18px -14px rgba(0,0,0,.35);
+  /* own compositor layer: keeps the bar pinned while mobile browser
+     chrome shows/hides, instead of repaint-lagging behind the scroll */
+  transform:translateZ(0);will-change:transform;
   padding:8px 10px calc(8px + env(safe-area-inset-bottom))}
 .bnav a,.bnav button{border:none;background:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;flex:1;max-width:86px;
   font:600 10px/1 var(--body);color:var(--faint);text-decoration:none;

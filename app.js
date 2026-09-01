@@ -1143,7 +1143,7 @@
       open[el.id]=el.open;});
     buildHeader();buildYearBar();buildSessBar();buildExamsHead();buildPicker();buildCards();
     buildCalendar();buildCleared();buildTables();buildSetup();render();buildTrend();
-    renderNow();buildSchedList();buildSchedEditor();renderBnav();buildTabsEditor();buildDue();
+    renderNow();buildSchedList();buildSchedEditor();buildTabsEditor();buildDue();
     Object.keys(open).forEach(function(id){
       var el=document.getElementById(id);if(el)el.open=open[id];});
     var wb=document.getElementById("whatifBtn");
@@ -2627,7 +2627,7 @@
   function toggleTheme(){applyTheme(effectiveDark()?"light":"dark");}
   function toggleLang(){
     setLang(LANG==="en"?"sq":"en");
-    setSaveState();buildAll();route();
+    setSaveState();buildAll();renderBnav();route();
   }
   document.getElementById("themeBtn").addEventListener("click",toggleTheme);
   document.getElementById("langBtn").addEventListener("click",toggleLang);
@@ -2772,10 +2772,10 @@
     store.get(K).then(function(v){
       if(v){try{DATA=normalise(JSON.parse(v));}catch(e){DATA=seedData();}}
       UI.session=autoSelect(DATA.sessions,DATA.pool,NOW);
-      buildAll();route();
+      buildAll();renderBnav();buildDue();route();
     }).catch(function(){
       UI.session=autoSelect(DATA.sessions,DATA.pool,NOW);
-      buildAll();route();
+      buildAll();renderBnav();buildDue();route();
     });
   }
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);
