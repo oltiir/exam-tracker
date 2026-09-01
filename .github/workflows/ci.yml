@@ -1,0 +1,27 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Syntax
+        run: node --check app.js && node --check sw.js
+      - name: Core acceptance suite
+        run: node test/core.test.js
+      - name: Smoke — page boots with the router completing
+        run: |
+          python3 -m http.server 8080 &
+          sleep 1
+          google-chrome --headless=new --disable-gpu --no-sandbox \
+            --virtual-time-budget=5000 --dump-dom http://127.0.0.1:8080/ > dom.html
+          grep -q 'data-booted="1"' dom.html || (echo "boot marker missing — app crashed during build/route" && exit 1)
+          grep -q 'id="moreBtn"' dom.html || (echo "bottom nav did not render" && exit 1)
+          echo "smoke OK"

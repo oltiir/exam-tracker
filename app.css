@@ -608,6 +608,23 @@ details.settings{margin-top:14px}
   border-top:1px solid var(--hair);margin-top:8px;padding-top:12px}
 .tab-rows{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
 
+/* ---------- update toast & crash card ---------- */
+.toast{position:fixed;left:50%;transform:translateX(-50%) translateZ(0);
+  bottom:calc(84px + env(safe-area-inset-bottom));z-index:90;
+  display:flex;align-items:center;gap:12px;
+  background:var(--ink);color:var(--surface);font:600 13px var(--body);
+  padding:10px 12px 10px 18px;border-radius:999px;
+  box-shadow:0 10px 30px -10px rgba(0,0,0,.45);animation:sheetUp .25s ease-out}
+@media(min-width:761px){.toast{bottom:26px}}
+.crash{position:fixed;inset:0;z-index:100;background:rgba(28,23,16,.5);
+  display:flex;align-items:center;justify-content:center;padding:20px}
+.crash-in{max-width:420px;width:100%;padding:26px 22px;text-align:center}
+.crash-in .emoji{font-size:32px;margin-bottom:10px}
+.crash-in p{color:var(--ink);font-size:14.5px;line-height:1.6}
+.crash-d{margin-top:8px;font:500 11px var(--mono)!important;color:var(--faint)!important;
+  word-break:break-word}
+.crash-btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:18px}
+
 /* ---------- responsive ---------- */
 @media(max-width:760px){
   .bnav{display:flex}

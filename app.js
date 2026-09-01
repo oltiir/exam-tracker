@@ -755,6 +755,9 @@
     wizManualNote:"There's no built-in plan for this program yet — you'll add your subjects in Set up → Exam pool. Everything else works the same.",
     back:"Back",next:"Next",finish:"Finish",
     aboutNumbers:"How the numbers are counted",
+    updateReady:"New version ready",refresh:"Refresh",
+    crashMsg:"Something broke — your data is safe on this device.",
+    reloadBtn:"Reload",restoreSnap:"Restore yesterday's snapshot",
     saveChanges:"Save changes",
     lblSem:"Semester",lblDate:"Exam date (optional)",lblLabel:"Label",
     lblYearNum:"Year",lblMonth:"Month",lblDayW:"Day",
@@ -903,6 +906,9 @@
     wizManualNote:"S'ka ende plan të gatshëm për këtë program — lëndët i shton te Cilësimet → Lista e provimeve. Gjithçka tjetër punon njëjtë.",
     back:"Prapa",next:"Vazhdo",finish:"Përfundo",
     aboutNumbers:"Si llogariten numrat",
+    updateReady:"Versioni i ri është gati",refresh:"Rifresko",
+    crashMsg:"Diçka u prish — të dhënat i ke të sigurta në këtë pajisje.",
+    reloadBtn:"Ringarko",restoreSnap:"Rikthe kopjen e djeshme",
     saveChanges:"Ruaj ndryshimet",
     lblSem:"Semestri",lblDate:"Data e provimit (ops.)",lblLabel:"Emërtimi",
     lblYearNum:"Viti",lblMonth:"Muaji",lblDayW:"Dita",
@@ -1062,6 +1068,18 @@
   function setDirty(n){try{localStorage.setItem("ubt-dirty",String(n));}catch(e){}}
   function save(){
     if(WHATIF)return;
+    /* once a day, keep yesterday's state as a local snapshot the crash
+       card can restore from */
+    try{
+      var today=new Date().toDateString();
+      if(localStorage.getItem("ubt-snap-day")!==today){
+        var prev=localStorage.getItem(K);
+        if(prev){
+          localStorage.setItem("ubt-snap",prev);
+          localStorage.setItem("ubt-snap-day",today);
+        }
+      }
+    }catch(e){}
     store.set(K,JSON.stringify(DATA));
     setDirty(getDirty()+1);
   }
@@ -1135,8 +1153,33 @@
     }
   }
 
-  /* ---------- build everything (cheap — the app is small) ---------- */
+  /* ---------- crash guard: never fail silently ---------- */
+  function showCrash(err){
+    var el=document.getElementById("crashCard");
+    if(!el)return;
+    el.hidden=false;
+    try{
+      document.getElementById("crashDetail").textContent=String(err&&err.message||err);
+      var hasSnap=false;
+      try{hasSnap=!!localStorage.getItem("ubt-snap");}catch(e2){}
+      document.getElementById("crashRestore").hidden=!hasSnap;
+    }catch(e){}
+  }
+  document.getElementById("crashReload").addEventListener("click",function(){
+    location.reload();});
+  document.getElementById("crashRestore").addEventListener("click",function(){
+    try{
+      var snap=localStorage.getItem("ubt-snap");
+      if(snap)localStorage.setItem(K,snap);
+    }catch(e){}
+    location.reload();
+  });
   function buildAll(){
+    try{buildAllInner();}catch(err){showCrash(err);}
+  }
+
+  /* ---------- build everything (cheap — the app is small) ---------- */
+  function buildAllInner(){
     /* keep collapsibles as the user left them across rebuilds */
     var open={};
     Array.prototype.forEach.call(document.querySelectorAll("details[data-keep]"),function(el){
@@ -2361,10 +2404,18 @@
     var p=DATA.profile;
     wiz={step:0,name:p.name||"",uni:p.uni||"",major:p.major||"",
          year:p.year||1,spec:p.spec||"",passed:{},grades:{}};
+    lastFocus=document.activeElement;
     document.getElementById("wizBackdrop").hidden=false;
     wizRender();
+    var f=document.getElementById("wizName")||document.getElementById("wizNext");
+    if(f)f.focus();
   }
-  function closeWizard(){document.getElementById("wizBackdrop").hidden=true;wiz=null;}
+  function closeWizard(){
+    var b=document.getElementById("wizBackdrop");
+    if(b.hidden)return;
+    b.hidden=true;wiz=null;
+    if(lastFocus&&lastFocus.focus)lastFocus.focus();
+  }
   function wizStepIds(){
     var s=["who","prog"];
     if(curricFor(wiz.uni,wiz.major,wiz.year,wiz.spec).length){
@@ -2661,8 +2712,39 @@
   function setTabsPref(list){
     try{localStorage.setItem("ubt-tabs",JSON.stringify(list));}catch(e){}
   }
-  function openSheet(){document.getElementById("moreBackdrop").hidden=false;}
-  function closeSheet(){document.getElementById("moreBackdrop").hidden=true;}
+  var lastFocus=null;
+  function openSheet(){
+    lastFocus=document.activeElement;
+    document.getElementById("moreBackdrop").hidden=false;
+    var f=document.querySelector("#sheetList a,#moreBackdrop button");
+    if(f)f.focus();
+  }
+  function closeSheet(){
+    var b=document.getElementById("moreBackdrop");
+    if(b.hidden)return;
+    b.hidden=true;
+    if(lastFocus&&lastFocus.focus)lastFocus.focus();
+  }
+  /* Escape closes the open modal; Tab stays inside it */
+  document.addEventListener("keydown",function(ev){
+    var wb=document.getElementById("wizBackdrop");
+    var mb=document.getElementById("moreBackdrop");
+    var modal=(wb&&!wb.hidden)?wb:((mb&&!mb.hidden)?mb:null);
+    if(!modal)return;
+    if(ev.key==="Escape"){
+      ev.preventDefault();
+      if(modal===wb)closeWizard();else closeSheet();
+      return;
+    }
+    if(ev.key!=="Tab")return;
+    var f=Array.prototype.filter.call(
+      modal.querySelectorAll('button,select,input,a[href]'),
+      function(el){return !el.disabled&&el.offsetParent!==null;});
+    if(!f.length)return;
+    var first=f[0],last=f[f.length-1];
+    if(ev.shiftKey&&document.activeElement===first){ev.preventDefault();last.focus();}
+    else if(!ev.shiftKey&&document.activeElement===last){ev.preventDefault();first.focus();}
+  });
   document.getElementById("moreBackdrop").addEventListener("click",function(ev){
     if(ev.target===this)closeSheet();
   });
@@ -2723,7 +2805,7 @@
 
   /* ---------- hash router: every tab is its own page ---------- */
   var VIEW_KEYS=["home","exams","due","sched","stats","setup"];
-  function route(){
+  function routeInner(){
     var v=(location.hash||"").replace(/^#\/?/,"");
     if(v==="cal")v="exams";   /* legacy link — calendar lives on the exams page */
     if(VIEW_KEYS.indexOf(v)<0)v="home";
@@ -2746,9 +2828,17 @@
     if(mb)mb.classList.toggle("on",getTabs().indexOf(v)<0);
     closeSheet();
     /* things that size or tick against the live page */
+    Array.prototype.forEach.call(document.querySelectorAll("[data-nav]"),function(a){
+      if(a.dataset.nav===v)a.setAttribute("aria-current","page");
+      else a.removeAttribute("aria-current");
+    });
     if(v==="home")buildTrend();
     if(v==="sched"){renderNow();buildSchedList();}
     window.scrollTo(0,0);
+    document.body.dataset.booted="1";   /* CI smoke marker: full boot done */
+  }
+  function route(){
+    try{routeInner();}catch(err){showCrash(err);}
   }
   window.addEventListener("hashchange",route);
 
@@ -2785,6 +2875,18 @@
   if("serviceWorker" in navigator&&/^https?:$/.test(location.protocol)){
     window.addEventListener("load",function(){
       navigator.serviceWorker.register("./sw.js").catch(function(){});
+    });
+    /* a controllerchange after the first install means a new version is
+       cached and one refresh away — offer it instead of requiring a
+       second visit */
+    var hadController=!!navigator.serviceWorker.controller;
+    navigator.serviceWorker.addEventListener("controllerchange",function(){
+      if(!hadController){hadController=true;return;}
+      var el=document.getElementById("updateToast");
+      if(el)el.hidden=false;
+    });
+    document.getElementById("updateReload").addEventListener("click",function(){
+      location.reload();
     });
   }
 })(typeof window!=="undefined"?window:globalThis);

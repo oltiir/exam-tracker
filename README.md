@@ -145,6 +145,9 @@ icon-192.png            home-screen icons
 icon-512.png
 ```
 
+Tests: `node test/core.test.js` runs the 40-check acceptance suite; CI runs
+it plus a headless boot smoke on every push.
+
 To work on it locally, any static server will do:
 
 ```bash

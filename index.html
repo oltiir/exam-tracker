@@ -391,7 +391,7 @@ try{var _t=localStorage.getItem("ubt-theme");if(_t)document.documentElement.setA
 
 <!-- "More" sheet: unpinned pages + quick toggles -->
 <div class="sheet-backdrop" id="moreBackdrop" hidden>
-  <div class="sheet" role="menu" aria-label="More">
+  <div class="sheet" role="dialog" aria-modal="true" aria-label="More">
     <div class="sheet-grab"></div>
     <div class="sheet-list" id="sheetList"></div>
     <div class="sheet-tools">
@@ -438,6 +438,25 @@ try{var _t=localStorage.getItem("ubt-theme");if(_t)document.documentElement.setA
     <div class="wiz-foot">
       <button class="btn" id="wizBack" type="button" data-i18n="back">Back</button>
       <button class="btn primary" id="wizNext" type="button" data-i18n="next">Next</button>
+    </div>
+  </div>
+</div>
+
+<!-- update-ready toast -->
+<div class="toast" id="updateToast" hidden>
+  <span data-i18n="updateReady">New version ready</span>
+  <button class="btn small primary" id="updateReload" type="button" data-i18n="refresh">Refresh</button>
+</div>
+
+<!-- crash safety card -->
+<div class="crash" id="crashCard" hidden>
+  <div class="crash-in card">
+    <div class="emoji">🛟</div>
+    <p data-i18n="crashMsg">Something broke — your data is safe on this device.</p>
+    <p class="crash-d" id="crashDetail"></p>
+    <div class="crash-btns">
+      <button class="btn primary" id="crashReload" type="button" data-i18n="reloadBtn">Reload</button>
+      <button class="btn" id="crashRestore" type="button" data-i18n="restoreSnap" hidden>Restore yesterday's snapshot</button>
     </div>
   </div>
 </div>
