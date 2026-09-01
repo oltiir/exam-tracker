@@ -754,6 +754,7 @@
     wizGrades:"Grades for the passed courses",
     wizManualNote:"There's no built-in plan for this program yet — you'll add your subjects in Set up → Exam pool. Everything else works the same.",
     back:"Back",next:"Next",finish:"Finish",
+    aboutNumbers:"How the numbers are counted",
     semLbl:"Semester {n}",
     curricH:"Official study plan — up to year {n}",
     curricSub:"Tick subjects, then send them where they belong: exams you still owe → the pool; exams you've passed → completed courses. Electives (zgjedhore) aren't listed — add yours manually in the exam pool. Semesters stay editable afterwards, so you can move a subject if the plan shifts.",
@@ -896,6 +897,7 @@
     wizGrades:"Notat e lëndëve të kaluara",
     wizManualNote:"S'ka ende plan të gatshëm për këtë program — lëndët i shton te Cilësimet → Lista e provimeve. Gjithçka tjetër punon njëjtë.",
     back:"Prapa",next:"Vazhdo",finish:"Përfundo",
+    aboutNumbers:"Si llogariten numrat",
     semLbl:"Semestri {n}",
     curricH:"Plani zyrtar — deri në vitin {n}",
     curricSub:"Shënoji lëndët dhe çoji ku duhet: provimet që t'kanë mbetur → në listë; ato që i ke kaluar → te të përfunduarat. Lëndët zgjedhore s'janë në listë — shtoji vetë në listën e provimeve. Semestrat mbeten të ndryshueshëm më vonë, po lëvizi lëndët nëse ndryshon plani.",
@@ -982,6 +984,11 @@
       el.innerHTML=t(el.dataset.i18nHtml);});
     Array.prototype.forEach.call(document.querySelectorAll("[data-i18n-ph]"),function(el){
       el.placeholder=t(el.dataset.i18nPh);});
+    Array.prototype.forEach.call(document.querySelectorAll("[data-i18n-split]"),function(el){
+      var s=t(el.dataset.i18nSplit),i=s.indexOf("—");
+      var a=i>=0?s.slice(0,i).trim():s,b=i>=0?s.slice(i+1).trim():"";
+      el.innerHTML='<span class="sum-t">'+esc(a)+'</span>'
+        +(b?'<span class="sum-s">'+esc(b)+'</span>':"");});
   }
 
   /* ---------- theme ---------- */

@@ -216,8 +216,24 @@ body.whatif #pickBox,body.whatif .x-btn,body.whatif select.slot,
 body.whatif .prep,body.whatif #setupSection{opacity:.45;pointer-events:none}
 
 /* ---------- collapsibles ---------- */
-details.pick summary,details.settings summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;
-  padding:15px 18px;font-family:var(--display);font-weight:600;font-size:14.5px}
+details.pick summary,details.settings summary,details.notes-box summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;
+  padding:15px 18px;font-family:var(--display);font-weight:600;font-size:14.5px;
+  border-radius:19px;transition:background .15s}
+details.pick summary:hover,details.settings summary:hover,details.notes-box summary:hover{background:var(--tint)}
+details[open]>summary{border-radius:19px 19px 0 0}
+details.settings summary{gap:13px}
+details.settings summary .chev{margin-left:0}
+details.settings summary>.chev:last-child{margin-left:auto}
+.sum-ic{flex:none;width:37px;height:37px;border-radius:12px;background:var(--tint);
+  display:grid;place-items:center;color:var(--muted)}
+details.settings summary:hover .sum-ic{background:var(--accent-soft);color:var(--accent)}
+.sum-ic svg{width:19px;height:19px}
+.sum-tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.sum-t{font-family:var(--display);font-weight:600;font-size:14.5px;line-height:1.25}
+.sum-s{font:400 12px/1.4 var(--body);color:var(--muted)}
+details.settings summary .badge{margin-left:0;flex:none}
+details[open] .set-body,details[open] .pick-list,details[open] .notes{animation:bodyIn .18s ease-out}
+@keyframes bodyIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
 details.pick summary::-webkit-details-marker,details.settings summary::-webkit-details-marker{display:none}
 details.pick summary .chev,details.settings summary .chev{transition:transform .2s;color:var(--faint);flex:none}
 details.pick[open] summary .chev,details.settings[open] summary .chev{transform:rotate(90deg)}
@@ -475,10 +491,13 @@ details.settings{margin-top:14px}
 .exam-row button:hover{color:var(--bad);background:var(--bad-soft)}
 .set-actions{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap}
 
-/* ---------- footer ---------- */
-.foot{display:flex;justify-content:space-between;align-items:center;gap:14px;margin-top:40px;flex-wrap:wrap;
-  padding-top:20px;border-top:1px solid var(--border)}
-.foot .left{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+/* ---------- footer / data card ---------- */
+.foot-card{margin-top:26px;padding:15px 18px;display:flex;justify-content:space-between;
+  align-items:center;gap:14px;flex-wrap:wrap}
+.foot-btns{display:flex;gap:10px;flex-wrap:wrap}
+.notes-box{margin-top:12px}
+.notes-box summary{font-size:13.5px}
+.notes-box .notes{margin-top:0;padding:2px 18px 16px;border-top:1px solid var(--hair)}
 .saved{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px}
 .dot{width:8px;height:8px;border-radius:50%;background:var(--good)}
 .dot.off{background:var(--faint)}
