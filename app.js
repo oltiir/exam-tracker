@@ -106,6 +106,62 @@
     return out;
   }
 
+  /* ---------- universities & their built-in study plans ---------- */
+  var UNIS={
+    ubt:{label:"Kolegji UBT",majors:[{k:"cse",label:"Shkenca Kompjuterike dhe Inxhinieri"}]},
+    aab:{label:"Kolegji AAB",majors:[{k:"csse",label:"Computer Science & Software Engineering"}]}
+  };
+  /* AAB BSc Computer Science and Software Engineering — from the official
+     program page (aab-edu.net), listed per year; semester split follows the
+     listed order (each year is 60 ECTS). Alternatives and electives are all
+     listed as a menu — students tick only what they actually take. */
+  var AAB_CSSE=[
+    {name:"Programming Fundamentals",sem:1,ects:8},
+    {name:"Mathematics I",sem:1,ects:4},
+    {name:"Computer Architecture and Operating Systems",sem:1,ects:8},
+    {name:"IT Skills",sem:1,ects:4},
+    {name:"English for Computer Science",sem:1,ects:6},
+    {name:"Object Oriented Programming",sem:2,ects:8},
+    {name:"Web Languages and Technologies",sem:2,ects:6},
+    {name:"Databases",sem:2,ects:8},
+    {name:"Project Management and Entrepreneurship",sem:2,ects:4},
+    {name:"Human-Computer Interaction",sem:2,ects:4},
+    {name:"Computer Systems Fundamentals",sem:2,ects:4},
+    {name:"Advanced English",sem:2,ects:4},
+    {name:"Introduction to Artificial Intelligence",sem:3,ects:4},
+    {name:"Computer Networks",sem:3,ects:6},
+    {name:"Web Programming",sem:3,ects:8},
+    {name:"Algorithms and Data Structures",sem:3,ects:6},
+    {name:"Algorithms that Implement on Graphs",sem:3,ects:6},
+    {name:"Research Methods",sem:4,ects:6},
+    {name:"Software Engineering",sem:4,ects:8},
+    {name:"Machine Learning",sem:4,ects:4},
+    {name:"Data Science",sem:4,ects:8},
+    {name:".NET Programming",sem:4,ects:6},
+    {name:"Server Administration",sem:4,ects:4},
+    {name:"Cryptography in Information Security",sem:4,ects:4},
+    {name:"Advanced Software Engineering",sem:5,ects:6},
+    {name:"Graphics and Game Programming",sem:5,ects:6},
+    {name:"Cloud Computing",sem:5,ects:6},
+    {name:"Project / Internship",sem:5,ects:6},
+    {name:"NoSQL Databases",sem:5,ects:4},
+    {name:"Virtual & Augmented Reality",sem:5,ects:4},
+    {name:"Advanced Database Systems",sem:6,ects:6},
+    {name:"Data Security",sem:6,ects:6},
+    {name:"Mobile Programming",sem:6,ects:4},
+    {name:"Diploma Thesis",sem:6,ects:6}
+  ];
+  function aabCurriculum(year){
+    return AAB_CSSE.filter(function(c){return Math.ceil(c.sem/2)<=year;})
+      .map(function(c){return {name:c.name,sem:c.sem,ects:c.ects,kind:"oblig"};});
+  }
+  /* the one entry point: which subjects exist for (uni, major, year, spec) */
+  function curricFor(uni,major,year,spec){
+    if(uni==="ubt"&&major==="cse")return cseCurriculum(year,spec);
+    if(uni==="aab"&&major==="csse")return aabCurriculum(year);
+    return [];
+  }
+
   /* tolerant course-name matching, so "Big Data" equals
      "Bazat e Teknologjive Big Data" and definite forms
      ("Sistemet dhe Sinjalet" vs "Sisteme dhe Sinjale") agree */
@@ -430,7 +486,7 @@
   function seedData(){
     return {
       profile:{name:"",baseCount:0,baseAvg:0,targetMin:8,targetMax:9,totalCourses:24,
-               totalEcts:180,baseEcts:0,baseAvgW:0,uniEmail:"",uniId:"",year:1,spec:"",major:""},
+               totalEcts:180,baseEcts:0,baseAvgW:0,uniEmail:"",uniId:"",year:1,spec:"",major:"",uni:""},
       pool:[],
       completed:[],
       sessions:[
@@ -471,12 +527,16 @@
     if(!d||typeof d!=="object")return seedData();
     d.profile=d.profile||{};
     var p=d.profile,s=seedData().profile;
-    ["name","uniEmail","uniId","spec","major"].forEach(function(k){
+    ["name","uniEmail","uniId","spec","major","uni"].forEach(function(k){
       if(typeof p[k]!=="string")p[k]=p[k]!=null?String(p[k]):(s[k]||"");});
     if(!SPECS[p.spec])p.spec="";
-    if(p.major!=="cse")p.major="";
-    /* stored data from before the major field: a chosen spec implies CSE */
+    /* stored data from before the uni/major fields: CSE implied UBT */
     if(!p.major&&p.spec)p.major="cse";
+    if(p.major==="cse"&&!p.uni)p.uni="ubt";
+    if(!UNIS[p.uni])p.uni="";
+    var okMajors=p.uni?UNIS[p.uni].majors.map(function(m){return m.k;}):[];
+    if(okMajors.indexOf(p.major)<0)p.major="";
+    if(!(p.uni==="ubt"&&p.major==="cse"))p.spec="";
     ["baseCount","baseAvg","targetMin","targetMax","totalCourses","totalEcts","baseEcts","baseAvgW","year"].forEach(function(k){
       p[k]=isFinite(+p[k])?+p[k]:s[k];});
     d.schedule=(d.schedule||[]).filter(function(en){
@@ -593,6 +653,7 @@
     weightedAvg:weightedAvg,trendPoints:trendPoints,deriveBase:deriveBase,earnedEcts:earnedEcts,
     SPECS:SPECS,COMMON:COMMON,curriculum:curriculum,
     CSE_Y12:CSE_Y12,cseCurriculum:cseCurriculum,normName:normName,nameMatch:nameMatch,
+    UNIS:UNIS,AAB_CSSE:AAB_CSSE,aabCurriculum:aabCurriculum,curricFor:curricFor,
     schedNow:schedNow,toMin:toMin,
     DUE_TYPES:DUE_TYPES,dueWhen:dueWhen,dueSplit:dueSplit,buildDueICS:buildDueICS,
     buildICS:buildICS,seedData:seedData,normalise:normalise,importAny:importAny};
@@ -684,9 +745,17 @@
     shareB:"📤 Share backup",startPoint:"start",
     lblUniEmail:"Uni email",lblUniId:"Student ID",lblYear:"Year of studies",lblSpec:"Specialization",
     lblMajor:"Major / program",majorNone:"— other program (add subjects manually)",
-    majorCse:"Shkenca Kompjuterike dhe Inxhinieri · CSE",
+    lblUni:"University",uniOther:"Other / not listed",
+    eyebrowBase:"Exam session tracker",
+    wizSetup:"Guided setup",wizWho:"Who are you?",
+    wizMajorYear:"Your program and year",
+    wizPassedQ:"Which of these have you already passed?",
+    wizPassedSub:"Tick the passed ones — everything unticked goes to your exam pool as still-to-sit.",
+    wizGrades:"Grades for the passed courses",
+    wizManualNote:"There's no built-in plan for this program yet — you'll add your subjects in Set up → Exam pool. Everything else works the same.",
+    back:"Back",next:"Next",finish:"Finish",
     semLbl:"Semester {n}",
-    curricH:"Official CSE curriculum — up to year {n}",
+    curricH:"Official study plan — up to year {n}",
     curricSub:"Tick subjects, then send them where they belong: exams you still owe → the pool; exams you've passed → completed courses. Electives (zgjedhore) aren't listed — add yours manually in the exam pool. Semesters stay editable afterwards, so you can move a subject if the plan shifts.",
     toPool:"→ exam pool",toPassed:"→ passed courses",
     inPassed:"✓ already passed",
@@ -818,9 +887,17 @@
     shareB:"📤 Ndaje kopjen",startPoint:"fillimi",
     lblUniEmail:"Email-i i UBT-së",lblUniId:"ID e studentit",lblYear:"Viti i studimeve",lblSpec:"Specializimi",
     lblMajor:"Drejtimi / programi",majorNone:"— program tjetër (lëndët shtohen manualisht)",
-    majorCse:"Shkenca Kompjuterike dhe Inxhinieri · CSE",
+    lblUni:"Universiteti",uniOther:"Tjetër / s'është në listë",
+    eyebrowBase:"Gjurmuesi i provimeve",
+    wizSetup:"Konfigurimi hap pas hapi",wizWho:"Kush je ti?",
+    wizMajorYear:"Programi dhe viti yt",
+    wizPassedQ:"Cilat prej këtyre i ke kaluar tashmë?",
+    wizPassedSub:"Shënoji të kaluarat — çka mbetet pa shënuar shkon në listën e provimeve si ende-pa-dhënë.",
+    wizGrades:"Notat e lëndëve të kaluara",
+    wizManualNote:"S'ka ende plan të gatshëm për këtë program — lëndët i shton te Cilësimet → Lista e provimeve. Gjithçka tjetër punon njëjtë.",
+    back:"Prapa",next:"Vazhdo",finish:"Përfundo",
     semLbl:"Semestri {n}",
-    curricH:"Plani zyrtar i CSE-së — deri në vitin {n}",
+    curricH:"Plani zyrtar — deri në vitin {n}",
     curricSub:"Shënoji lëndët dhe çoji ku duhet: provimet që t'kanë mbetur → në listë; ato që i ke kaluar → te të përfunduarat. Lëndët zgjedhore s'janë në listë — shtoji vetë në listën e provimeve. Semestrat mbeten të ndryshueshëm më vonë, po lëvizi lëndët nëse ndryshon plani.",
     toPool:"→ lista e provimeve",toPassed:"→ lëndët e kaluara",
     inPassed:"✓ e kaluar tashmë",
@@ -1056,8 +1133,16 @@
     if(wb)wb.textContent=WHATIF?t("whatifOn"):t("whatif");
   }
 
+  /* time-slot choices differ per university */
+  function slotOptions(){
+    if(DATA.profile.uni==="ubt")return SLOTS;
+    return ["","09:00–10:30","11:00–12:30","13:00–14:30","15:00–16:30","17:30–19:00"];
+  }
+
   function buildHeader(){
     var p=DATA.profile;
+    document.getElementById("eyebrow").textContent=
+      (UNIS[p.uni]?UNIS[p.uni].label+" · ":"")+t("eyebrowBase");
     document.getElementById("hTitle").textContent=
       p.name?p.name+"'s Exam Tracker":t("defaultTitle");
     var blank=!DATA.pool.length&&!DATA.completed.length;
@@ -1123,6 +1208,8 @@
   function buildExamsHead(){
     var sn=cur();
     document.getElementById("examHead").textContent=t("yourExams")+sn.label;
+    /* the Dukagjini-windows note is UBT-specific */
+    document.getElementById("examHint").hidden=DATA.profile.uni!=="ubt";
     var ex=sessionExams(sn);
     /* countdown to the nearest upcoming ungraded exam in this session */
     var today=new Date(NOW.getFullYear(),NOW.getMonth(),NOW.getDate());
@@ -1247,7 +1334,7 @@
       var meta=document.createElement("div");meta.className="slot-row";
       var sl=document.createElement("select");sl.className="slot";
       sl.setAttribute("aria-label",ex.name);
-      var opts=SLOTS.slice();
+      var opts=slotOptions().slice();
       if(en.slot&&opts.indexOf(en.slot)<0)opts.push(en.slot);
       opts.forEach(function(s){
         var o=document.createElement("option");o.value=s;o.textContent=s||t("timeDash");
@@ -1625,10 +1712,12 @@
     if(derived)dn.textContent=t("fromTranscript",{n:DATA.completed.length});
     document.getElementById("setUniEmail").value=p.uniEmail||"";
     document.getElementById("setUniId").value=p.uniId||"";
-    var ms=document.getElementById("setMajor");ms.innerHTML="";
-    [["",t("majorNone")],["cse",t("majorCse")]].forEach(function(pair){
+    var us=document.getElementById("setUni");us.innerHTML="";
+    [["",t("uniOther")]].concat(Object.keys(UNIS).map(function(k){
+      return [k,UNIS[k].label];})).forEach(function(pair){
       var o=document.createElement("option");o.value=pair[0];o.textContent=pair[1];
-      if(p.major===pair[0])o.selected=true;ms.appendChild(o);});
+      if(p.uni===pair[0])o.selected=true;us.appendChild(o);});
+    fillMajorOptions(document.getElementById("setMajor"),p.uni,p.major);
     var ys=document.getElementById("setYear");ys.innerHTML="";
     [1,2,3].forEach(function(y){
       var o=document.createElement("option");o.value=y;o.textContent=t("yearOpt",{n:y});
@@ -1642,23 +1731,36 @@
     renderCurricPanel();
   }
 
-  /* official CSE curriculum picker: subjects appear only up to the chosen
-     year, and each can be sent to the exam pool or straight to "passed" */
+  /* major choices depend on the chosen university */
+  function fillMajorOptions(sel,uni,current){
+    sel.innerHTML="";
+    var opts=(UNIS[uni]?UNIS[uni].majors.map(function(m){return [m.k,m.label];}):[]);
+    opts.push(["",t("majorNone")]);
+    opts.forEach(function(pair){
+      var o=document.createElement("option");o.value=pair[0];o.textContent=pair[1];
+      if(current===pair[0])o.selected=true;sel.appendChild(o);});
+  }
+
+  /* curriculum picker: subjects appear only up to the chosen year,
+     and each can be sent to the exam pool or straight to "passed" */
   function renderCurricPanel(){
     var panel=document.getElementById("specPanel");
+    var uni=document.getElementById("setUni").value;
     var major=document.getElementById("setMajor").value;
     var year=+document.getElementById("setYear").value||1;
     var spec=document.getElementById("setSpec").value;
-    /* the specialization row only matters for CSE year 3 */
-    document.getElementById("specRow").hidden=!(major==="cse"&&year>=3);
-    if(major!=="cse"){panel.hidden=true;panel.innerHTML="";return;}
+    /* the specialization row only matters for UBT CSE year 3 */
+    document.getElementById("specRow").hidden=!(uni==="ubt"&&major==="cse"&&year>=3);
+    if(!curricFor(uni,major,year,spec).length&&!curricFor(uni,major,3,"").length){
+      panel.hidden=true;panel.innerHTML="";return;
+    }
     panel.hidden=false;panel.innerHTML="";
     var h=document.createElement("h4");h.textContent=t("curricH",{n:year});
     var sub=document.createElement("p");sub.className="set-hint";sub.textContent=t("curricSub");
     panel.appendChild(h);panel.appendChild(sub);
     var KIND={oblig:"kOblig",spec:"kSpec",elect:"kElect"};
     var boxes=[],lastSem=0;
-    cseCurriculum(year,spec).forEach(function(it){
+    curricFor(uni,major,year,spec).forEach(function(it){
       if(it.sem!==lastSem){
         lastSem=it.sem;
         var sh=document.createElement("div");sh.className="curric-sem";
@@ -1682,12 +1784,13 @@
       panel.appendChild(row);
       if(!inPool&&!passed)boxes.push({inp:inp,it:it});
     });
-    if(year>=3&&!spec){
+    if(uni==="ubt"&&major==="cse"&&year>=3&&!spec){
       var note=document.createElement("p");note.className="set-hint";
       note.textContent=t("pickSpecFirst");panel.appendChild(note);
     }
     function keepChoices(){
-      DATA.profile.major=major;DATA.profile.spec=spec;DATA.profile.year=year;
+      DATA.profile.uni=uni;DATA.profile.major=major;
+      DATA.profile.spec=spec;DATA.profile.year=year;
     }
     var act=document.createElement("div");act.className="set-actions";
     var toPool=document.createElement("button");toPool.type="button";
@@ -1724,6 +1827,10 @@
     });
     act.appendChild(toPool);act.appendChild(toPassed);panel.appendChild(act);
   }
+  document.getElementById("setUni").addEventListener("change",function(){
+    fillMajorOptions(document.getElementById("setMajor"),this.value,"");
+    renderCurricPanel();
+  });
   document.getElementById("setMajor").addEventListener("change",renderCurricPanel);
   document.getElementById("setSpec").addEventListener("change",renderCurricPanel);
   document.getElementById("setYear").addEventListener("change",renderCurricPanel);
@@ -1777,8 +1884,7 @@
     save();buildAll();
   });
   document.getElementById("onboardBtn").addEventListener("click",function(){
-    location.hash="#/setup";
-    document.getElementById("detailsBox").open=true;   /* major & year first */
+    openWizard();   /* university & major first, step by step */
   });
   document.getElementById("addPool").addEventListener("click",function(){
     document.getElementById("poolRows").appendChild(poolRow(null));});
@@ -1860,6 +1966,7 @@
     p.year=+document.getElementById("setYear").value||1;
     p.spec=document.getElementById("setSpec").value;
     p.major=document.getElementById("setMajor").value;
+    p.uni=document.getElementById("setUni").value;
     save();buildAll();
   });
 
@@ -2180,6 +2287,183 @@
     download("deadlines-"+slug(DATA.profile.name)+".ics",
       buildDueICS(DATA.due,t("nextDueLbl")+": "),"text/calendar;charset=utf-8");
   });
+
+  /* ---------- guided setup wizard (step-by-step popup) ---------- */
+  var wiz=null;
+  function rid(pre){return pre+Date.now().toString(36)+Math.floor(Math.random()*1e4).toString(36);}
+  function openWizard(){
+    var p=DATA.profile;
+    wiz={step:0,name:p.name||"",uni:p.uni||"",major:p.major||"",
+         year:p.year||1,spec:p.spec||"",passed:{},grades:{}};
+    document.getElementById("wizBackdrop").hidden=false;
+    wizRender();
+  }
+  function closeWizard(){document.getElementById("wizBackdrop").hidden=true;wiz=null;}
+  function wizStepIds(){
+    var s=["who","prog"];
+    if(curricFor(wiz.uni,wiz.major,wiz.year,wiz.spec).length){
+      s.push("passed");
+      if(Object.keys(wiz.passed).some(function(k){return wiz.passed[k];}))s.push("grades");
+    }else s.push("manual");
+    return s;
+  }
+  function wizRender(){
+    var steps=wizStepIds();
+    if(wiz.step>=steps.length)wiz.step=steps.length-1;
+    var id=steps[wiz.step];
+    var dots=document.getElementById("wizDots");dots.innerHTML="";
+    steps.forEach(function(_,i){
+      var d=document.createElement("span");
+      d.className="dotstep"+(i<=wiz.step?" on":"");
+      dots.appendChild(d);});
+    var body=document.getElementById("wizBody");body.innerHTML="";
+    if(id==="who")wizWho(body);
+    else if(id==="prog")wizProg(body);
+    else if(id==="passed")wizPassed(body);
+    else if(id==="grades")wizGrades(body);
+    else wizManual(body);
+    document.getElementById("wizBack").style.visibility=wiz.step?"visible":"hidden";
+    document.getElementById("wizNext").textContent=
+      wiz.step===steps.length-1?t("finish"):t("next");
+  }
+  function wizWho(body){
+    var html='<h4>'+esc(t("wizWho"))+'</h4>'
+      +'<label class="wiz-lbl">'+esc(t("lblName"))
+      +'<input id="wizName" placeholder="'+esc(t("phName"))+'" autocomplete="off" value="'+esc(wiz.name)+'"></label>'
+      +'<div class="wiz-lbl">'+esc(t("lblUni"))+'</div><div>';
+    Object.keys(UNIS).map(function(k){return [k,UNIS[k].label];})
+      .concat([["",t("uniOther")]]).forEach(function(pair){
+      html+='<label class="pick-row"><input type="radio" name="wizUni" value="'+esc(pair[0])+'"'
+        +(wiz.uni===pair[0]?" checked":"")+'><span class="box">'+CHECK+'</span>'
+        +'<span class="pick-body"><span class="pick-name">'+esc(pair[1])+'</span></span></label>';
+    });
+    body.innerHTML=html+'</div>';
+    document.getElementById("wizName").addEventListener("input",function(){wiz.name=this.value;});
+    Array.prototype.forEach.call(body.querySelectorAll('input[name="wizUni"]'),function(r){
+      r.addEventListener("change",function(){
+        wiz.uni=this.value;
+        wiz.major=UNIS[wiz.uni]&&UNIS[wiz.uni].majors.length?UNIS[wiz.uni].majors[0].k:"";
+        wiz.passed={};wiz.grades={};
+      });
+    });
+  }
+  function wizProg(body){
+    body.innerHTML='<h4>'+esc(t("wizMajorYear"))+'</h4>'
+      +'<label class="wiz-lbl">'+esc(t("lblMajor"))+'<select id="wizMajor"></select></label>'
+      +'<div class="wiz-lbl">'+esc(t("lblYear"))+'</div><div class="yearbar" id="wizYears"></div>'
+      +'<div id="wizSpecWrap" hidden><label class="wiz-lbl">'+esc(t("lblSpec"))
+      +'<select id="wizSpec"></select></label></div>';
+    fillMajorOptions(document.getElementById("wizMajor"),wiz.uni,wiz.major);
+    var yb=document.getElementById("wizYears");
+    [1,2,3].forEach(function(y){
+      var b=document.createElement("button");b.type="button";
+      b.className="ytab"+(wiz.year===y?" on":"");
+      b.textContent=t("yearOpt",{n:y});
+      b.addEventListener("click",function(){wiz.year=y;wiz.passed={};wizRender();});
+      yb.appendChild(b);
+    });
+    var needSpec=wiz.uni==="ubt"&&wiz.major==="cse"&&wiz.year>=3;
+    document.getElementById("wizSpecWrap").hidden=!needSpec;
+    if(needSpec){
+      var ss=document.getElementById("wizSpec");ss.innerHTML="";
+      var o0=document.createElement("option");o0.value="";o0.textContent=t("specNone");
+      ss.appendChild(o0);
+      Object.keys(SPECS).forEach(function(k){
+        var o=document.createElement("option");o.value=k;
+        o.textContent=SPECS[k].sq+" · "+SPECS[k].en;
+        if(wiz.spec===k)o.selected=true;ss.appendChild(o);});
+      ss.addEventListener("change",function(){wiz.spec=this.value;});
+    }
+    document.getElementById("wizMajor").addEventListener("change",function(){
+      wiz.major=this.value;wiz.passed={};wiz.grades={};wizRender();
+    });
+  }
+  function wizPassed(body){
+    body.innerHTML='<h4>'+esc(t("wizPassedQ"))+'</h4>'
+      +'<p class="set-hint">'+esc(t("wizPassedSub"))+'</p>';
+    var lastSem=0;
+    curricFor(wiz.uni,wiz.major,wiz.year,wiz.spec).forEach(function(it){
+      if(it.sem!==lastSem){
+        lastSem=it.sem;
+        var sh=document.createElement("div");sh.className="curric-sem";
+        sh.textContent=t("yearOpt",{n:Math.ceil(it.sem/2)})+" · "+t("semLbl",{n:it.sem});
+        body.appendChild(sh);
+      }
+      var inComp=DATA.completed.some(function(c){return nameMatch(c.name,it.name);});
+      var inPool=DATA.pool.some(function(e){return nameMatch(e.name,it.name);});
+      var row=document.createElement("label");row.className="pick-row";
+      var inp=document.createElement("input");inp.type="checkbox";
+      inp.checked=inComp||!!wiz.passed[it.name];
+      inp.disabled=inComp||inPool;
+      var box=document.createElement("span");box.className="box";box.innerHTML=CHECK;
+      var b2=document.createElement("span");b2.className="pick-body";
+      b2.innerHTML='<span class="pick-name">'+esc(it.name)+'</span>'
+        +'<span class="pick-meta"><span class="sem-badge">'+it.ects+' ECTS</span>'
+        +(inComp?'<span class="pick-date">'+esc(t("inPassed"))+'</span>':"")
+        +(inPool?'<span class="pick-date">✓ '+esc(t("inPool"))+'</span>':"")+'</span>';
+      inp.addEventListener("change",function(){
+        wiz.passed[it.name]=inp.checked;
+        /* ticking adds the grades step — keep the button label honest */
+        var steps=wizStepIds();
+        document.getElementById("wizNext").textContent=
+          wiz.step===steps.length-1?t("finish"):t("next");
+      });
+      row.appendChild(inp);row.appendChild(box);row.appendChild(b2);
+      body.appendChild(row);
+    });
+  }
+  function wizGrades(body){
+    body.innerHTML='<h4>'+esc(t("wizGrades"))+'</h4>';
+    curricFor(wiz.uni,wiz.major,wiz.year,wiz.spec).forEach(function(it){
+      if(!wiz.passed[it.name])return;
+      var row=document.createElement("div");row.className="wiz-grade-row";
+      var nm=document.createElement("span");nm.textContent=it.name;
+      var sel=document.createElement("select");sel.className="mon";
+      [6,7,8,9,10].forEach(function(g){
+        var o=document.createElement("option");o.value=g;o.textContent=g;
+        if((wiz.grades[it.name]||8)===g)o.selected=true;sel.appendChild(o);});
+      sel.addEventListener("change",function(){wiz.grades[it.name]=+sel.value;});
+      row.appendChild(nm);row.appendChild(sel);
+      body.appendChild(row);
+    });
+  }
+  function wizManual(body){
+    body.innerHTML='<div class="now-empty"><div class="emoji">🧭</div>'
+      +'<p>'+esc(t("wizManualNote"))+'</p></div>';
+  }
+  function wizFinish(){
+    var p=DATA.profile;
+    p.name=wiz.name.trim();
+    p.uni=wiz.uni;p.major=wiz.major;p.year=wiz.year;
+    p.spec=(wiz.uni==="ubt"&&wiz.major==="cse"&&wiz.year>=3)?wiz.spec:"";
+    curricFor(wiz.uni,wiz.major,wiz.year,wiz.spec).forEach(function(it){
+      var inComp=DATA.completed.some(function(c){return nameMatch(c.name,it.name);});
+      var inPool=DATA.pool.some(function(e){return nameMatch(e.name,it.name);});
+      if(wiz.passed[it.name]){
+        if(!inComp)DATA.completed.push({id:rid("f"),name:it.name,
+          grade:wiz.grades[it.name]||8,ects:it.ects});
+      }else if(!inComp&&!inPool){
+        DATA.pool.push({id:rid("c"),name:it.name,sem:it.sem,ects:it.ects,date:""});
+      }
+    });
+    deriveBase(DATA);
+    if(p.totalCourses<p.baseCount)p.totalCourses=p.baseCount;
+    save();buildAll();closeWizard();
+  }
+  document.getElementById("wizBack").addEventListener("click",function(){
+    if(wiz&&wiz.step>0){wiz.step--;wizRender();}
+  });
+  document.getElementById("wizNext").addEventListener("click",function(){
+    if(!wiz)return;
+    var steps=wizStepIds();
+    if(wiz.step<steps.length-1){wiz.step++;wizRender();}
+    else wizFinish();
+  });
+  document.getElementById("wizClose").addEventListener("click",closeWizard);
+  document.getElementById("wizBackdrop").addEventListener("click",function(ev){
+    if(ev.target===this)closeWizard();
+  });
+  document.getElementById("wizardBtn").addEventListener("click",openWizard);
 
   /* ---------- what-if sandbox ---------- */
   document.getElementById("whatifBtn").addEventListener("click",function(){
