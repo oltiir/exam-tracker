@@ -357,6 +357,25 @@ ok("v3 export round-trips through importAny", () => {
   assert.strictEqual(round.completed.length, 12);
 });
 
-console.log("");
-console.log(pass + " passed, " + fail + " failed");
-if (fail) process.exit(1);
+console.log("Sync codes:");
+(async () => {
+  try {
+    const json = JSON.stringify({ app: "x", version: 3, data: fixture() });
+    const code = await C.packCode(json);
+    assert.ok(/^AFATI[01]:/.test(code));
+    const back = await C.unpackCode(code);
+    assert.strictEqual(JSON.parse(back).data.pool.length, 12);
+    const plain = await C.unpackCode(
+      "AFATI0:" + Buffer.from(json, "utf8").toString("base64"));
+    assert.strictEqual(JSON.parse(plain).version, 3);
+    let bad = null;
+    await C.unpackCode("nonsense").catch(e => bad = e);
+    assert.ok(bad);
+    pass++; console.log("  ok sync codes round-trip (gzip + plain), garbage rejected");
+  } catch (e) {
+    fail++; console.log("  FAIL sync codes — " + e.message); process.exitCode = 1;
+  }
+  console.log("");
+  console.log(pass + " passed, " + fail + " failed");
+  if (fail) process.exit(1);
+})();

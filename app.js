@@ -644,7 +644,43 @@
     return normalise(d);
   }
 
+  /* ---------- sync codes: whole-state as a pasteable string ----------
+     "AFATI1:" + base64(gzip(json)) where CompressionStream exists,
+     "AFATI0:" + base64(json) otherwise. Both always decodable. */
+  function b64FromBytes(bytes){
+    var s="";
+    for(var i=0;i<bytes.length;i+=0x8000)
+      s+=String.fromCharCode.apply(null,bytes.subarray(i,i+0x8000));
+    return btoa(s);
+  }
+  function bytesFromB64(b64){
+    var s=atob(b64),out=new Uint8Array(s.length);
+    for(var i=0;i<s.length;i++)out[i]=s.charCodeAt(i);
+    return out;
+  }
+  function packCode(json){
+    var raw=new TextEncoder().encode(json);
+    if(typeof CompressionStream==="function"){
+      return new Response(
+        new Blob([raw]).stream().pipeThrough(new CompressionStream("gzip"))
+      ).arrayBuffer().then(function(buf){
+        return "AFATI1:"+b64FromBytes(new Uint8Array(buf));
+      });
+    }
+    return Promise.resolve("AFATI0:"+b64FromBytes(raw));
+  }
+  function unpackCode(code){
+    var m=/^AFATI([01]):([A-Za-z0-9+\/=\s]+)$/.exec(String(code||"").trim());
+    if(!m)return Promise.reject(new Error("format"));
+    var bytes=bytesFromB64(m[2].replace(/\s+/g,""));
+    if(m[1]==="0")return Promise.resolve(new TextDecoder().decode(bytes));
+    return new Response(
+      new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip"))
+    ).text();
+  }
+
   var CORE={MON:MON,MON_FULL:MON_FULL,DOW:DOW,SLOTS:SLOTS,LOC:LOC,
+    packCode:packCode,unpackCode:unpackCode,
     n2:n2,nice:nice,esc:esc,pad2:pad2,parseDMY:parseDMY,dayLabel:dayLabel,fullDate:fullDate,
     poolIndex:poolIndex,sessionEnd:sessionEnd,sortSessions:sortSessions,autoSelect:autoSelect,
     isPassed:isPassed,isFailed:isFailed,attempts:attempts,nthTry:nthTry,
@@ -756,6 +792,9 @@
     back:"Back",next:"Next",finish:"Finish",
     aboutNumbers:"How the numbers are counted",
     updateReady:"New version ready",refresh:"Refresh",
+    syncCopy:"⧉ Copy sync code",syncPaste:"⇣ Enter sync code",
+    syncCopied:"Copied ✓ — message it to yourself, then tap “Enter sync code” on the other device.",
+    syncPasteMsg:"Paste the sync code from your other device:",
     crashMsg:"Something broke — your data is safe on this device.",
     reloadBtn:"Reload",restoreSnap:"Restore yesterday's snapshot",
     saveChanges:"Save changes",
@@ -907,6 +946,9 @@
     back:"Prapa",next:"Vazhdo",finish:"Përfundo",
     aboutNumbers:"Si llogariten numrat",
     updateReady:"Versioni i ri është gati",refresh:"Rifresko",
+    syncCopy:"⧉ Kopjo kodin e sinkronizimit",syncPaste:"⇣ Vendos kodin",
+    syncCopied:"U kopjua ✓ — dërgoje vetes në çfarëdo chat-i, pastaj prek “Vendos kodin” në pajisjen tjetër.",
+    syncPasteMsg:"Ngjite kodin e sinkronizimit nga pajisja tjetër:",
     crashMsg:"Diçka u prish — të dhënat i ke të sigurta në këtë pajisje.",
     reloadBtn:"Ringarko",restoreSnap:"Rikthe kopjen e djeshme",
     saveChanges:"Ruaj ndryshimet",
@@ -2639,6 +2681,37 @@
       }else fallback();
     });
   })();
+  document.getElementById("syncCopyBtn").addEventListener("click",function(){
+    makeAndCopyCode();
+  });
+  function makeAndCopyCode(){
+    packCode(JSON.stringify({app:"ubt-exam-tracker",version:3,data:DATA}))
+      .then(function(code){
+        var write=navigator.clipboard&&navigator.clipboard.writeText
+          ?navigator.clipboard.writeText(code):Promise.reject(new Error("no-clipboard"));
+        return write.then(function(){
+          markBackedUp();
+          alert(t("syncCopied"));
+        }).catch(function(){
+          /* clipboard blocked — hand it over for manual copy */
+          prompt(t("syncCopy"),code);
+          markBackedUp();
+        });
+      });
+  }
+  document.getElementById("syncPasteBtn").addEventListener("click",function(){
+    var code=prompt(t("syncPasteMsg"));
+    if(!code)return;
+    unpackCode(code).then(function(json){
+      var next=importAny(JSON.parse(json));
+      if(!next)throw new Error("shape");
+      exitWhatIf();
+      DATA=next;
+      UI.session=autoSelect(DATA.sessions,DATA.pool,NOW);
+      save();setDirty(0);buildAll();
+      location.hash="#/home";
+    }).catch(function(){alert(t("badImport"));});
+  });
   document.getElementById("importBtn").addEventListener("click",function(){
     document.getElementById("importFile").click();});
   document.getElementById("importFile").addEventListener("change",function(ev){
@@ -2834,7 +2907,8 @@
     });
     if(v==="home")buildTrend();
     if(v==="sched"){renderNow();buildSchedList();}
-    window.scrollTo(0,0);
+    try{window.scrollTo({top:0,left:0,behavior:"instant"});}
+    catch(e){window.scrollTo(0,0);}
     document.body.dataset.booted="1";   /* CI smoke marker: full boot done */
   }
   function route(){
